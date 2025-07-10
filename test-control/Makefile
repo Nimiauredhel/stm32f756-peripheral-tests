@@ -1,4 +1,4 @@
-SOURCE=  *.cpp
+SOURCE=  *.c
 PROGRAM=test_control
 EXE_NAME=$(PROGRAM)
 ARGS=
@@ -12,15 +12,15 @@ DEBUG_FLAGS= $(STRICT_FLAGS) -g -o0
 
 default:
 	mkdir $(BUILD_DIR)
-	g++ $(SOURCE) $(DEFAULT_FLAGS) $(INC) $(LIBS) -o $(EXE_PATH)
+	gcc $(SOURCE) $(DEFAULT_FLAGS) $(INC) $(LIBS) -o $(EXE_PATH)
                                      
 strict:                              
 	mkdir $(BUILD_DIR)
-	bear -- g++ $(SOURCE) $(STRICT_FLAGS) $(INC) $(LIBS) -o $(EXE_PATH)
+	bear -- gcc $(SOURCE) $(STRICT_FLAGS) $(INC) $(LIBS) -o $(EXE_PATH)
                     
 debug:              
 	mkdir $(BUILD_DIR)
-	g++ $(SOURCE) $(DEBUG_FLAGS) $(INC) $(LIBS) -o $(EXE_PATH)
+	gcc $(SOURCE) $(DEBUG_FLAGS) $(INC) $(LIBS) -o $(EXE_PATH)
 
 .ONESHELL:
 run:

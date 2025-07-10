@@ -1,4 +1,4 @@
-#include "common.hpp"
+#include "common.h"
 
 /**
  * Global flag set by OS termination signals

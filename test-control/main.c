@@ -1,17 +1,9 @@
-#include <iostream>
-#include <cstring>
-#include <iterator>
-#include <climits>
-
-#include <limits>
-#include <unistd.h>
-
-#include "common.hpp"
-#include "networking_common.hpp"
+#include "common.h"
+#include "networking_common.h"
 #include "test_packet_def.h"
 
 #define SERVER_PORT (45678)
-#define NUM_POSSIBLE_TESTS (3)
+#define NUM_POSSIBLE_TESTS (5)
 
 static int sockfd = 0;
 static struct sockaddr_in server_addr;
@@ -22,7 +14,7 @@ static uint8_t rx_buffer[TEST_PACKET_SIZE_BYTES] = {0};
 
 static char test_names[NUM_POSSIBLE_TESTS][8] =
 {
-    "UART\0", "I2C\0", "SPI\0",
+    "TIMER\0", "UART\0","SPI\0", "I2C\0", "ADC\0",
 };
 
 static void listen_for_responses(uint8_t test_selection_byte)
@@ -41,29 +33,26 @@ static void listen_for_responses(uint8_t test_selection_byte)
         {
             switch((TestPacketMsg_t)rx_buffer[TEST_PACKET_MSG_BYTE_OFFSET])
             {
-            case TESTMSG_ACK_SERVER:
-                std::cout << "Received acknowledgement from server.\n";
-                break;
-            case TESTMSG_ACK_DEVICE:
-                std::cout << "Received acknowledgement from device.\n";
+            case TESTMSG_ACK:
+                printf("Received acknowledgement from device.\n");
                 break;
             case TESTMSG_RESULT:
                 results_received = true;
-                std::cout << "Received results.\n";
+                printf("Received results.\n");
 
                 for (uint8_t i = 0; i < NUM_POSSIBLE_TESTS; i++)
                 {
                     if (0x01 & (test_selection_byte >> (uint8_t)i))
                     {
-                        std::cout << test_names[i] << " Test ";
+                        printf("%s Test ", test_names[i]);
 
                         if (0x01 & (rx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] >> (uint8_t)i))
                         {
-                            std::cout << "Passed.\n";
+                            printf("Passed.\n");
                         }
                         else
                         {
-                            std::cout << "Failed.\n";
+                            printf("Failed.\n");
                         }
                     }
                 }
@@ -72,13 +61,13 @@ static void listen_for_responses(uint8_t test_selection_byte)
             case TESTMSG_NONE:
             case TESTMSG_NEWTEST:
             default:
-                std::cout << "Received unexpected response packet.\n";
+                printf("Received unexpected response packet.\n");
                 break;
             }
         }
         else
         {
-            std::cout << "Received invalid packet.\n";
+            printf("Received invalid packet.\n");
         }
     }
 }
@@ -104,13 +93,12 @@ static void init_udp(void)
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SERVER_PORT);
 
-    std::cout << "Please input server IP.\n";
-    std::cin.getline(server_ip_str, std::size(server_ip_str));
-    std::cin.clear();
+    printf("Please input server IP.\n");
+    fgets(server_ip_str, 8, stdin);
 
     if (0 == inet_aton(server_ip_str, &server_addr.sin_addr))
     {
-        std::cout << "Failed parsing IP.\n";
+        printf("Failed parsing IP.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -141,10 +129,10 @@ int main(void)
     {
         init_packet();
 
-        std::cout << "Please input a test string.\n";
-        std::cin.getline(user_input_buffer, std::size(user_input_buffer));
-        std::cin.clear();
-        std::cout << "Given input: " << user_input_buffer << std::endl;
+        printf("Please input a test string.\n");
+        explicit_bzero(user_input_buffer, sizeof(user_input_buffer));
+        fgets(user_input_buffer, sizeof(user_input_buffer), stdin);
+        printf("Given input: %s\n", user_input_buffer);
 
         bool selection_valid = false;
         char test_selection_input[2] = {0};
@@ -154,18 +142,9 @@ int main(void)
         {
             if (should_terminate) goto terminate;
 
-            std::cout << "\nSelect a test combination:\n";
-            std::cout << "1. UART\n";
-            std::cout << "2. I2C\n";
-            std::cout << "3. UART + I2C\n";
-            std::cout << "4. SPI\n";
-            std::cout << "5. UART + SPI\n";
-            std::cout << "6. I2C + SPI\n";
-            std::cout << "7. UART + I2C + SPI\n";
-
-            std::cin.getline(test_selection_input, 2);
-            std::cin.clear();
-            test_selection_byte = std::atoi(test_selection_input);
+            printf("\nSelect a test combination [TIMER|UART|SPI|I2C|ADC]:\n");
+            fgets(test_selection_input, 2, stdin);
+            test_selection_byte = atoi(test_selection_input);
 
             selection_valid = test_selection_byte > 0 && test_selection_byte <= 7;
         }
@@ -173,11 +152,11 @@ int main(void)
         tx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] = test_selection_byte;
         tx_buffer[TEST_PACKET_STRING_LEN_OFFSET] = strlen(user_input_buffer);
 
-        std::snprintf((char *)(tx_buffer + TEST_PACKET_STRING_HEAD_OFFSET), TEST_PACKET_STR_MAX_LEN, "%s", user_input_buffer);
+        snprintf((char *)(tx_buffer + TEST_PACKET_STRING_HEAD_OFFSET), TEST_PACKET_STR_MAX_LEN, "%s", user_input_buffer);
 
         if(send_test_packet())
         {
-            std::cout << "Sent Test Request." << std::endl;
+            printf("Sent Test Request.\n");
             listen_for_responses(test_selection_byte);
         }
     }
@@ -185,7 +164,7 @@ int main(void)
 terminate:
     close(sockfd);
 
-    std::cout << "\nTerminated by user.\n";
+    printf("\nTerminated by user.\n");
 
     return EXIT_SUCCESS;
 }
