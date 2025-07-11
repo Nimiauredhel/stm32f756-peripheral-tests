@@ -18,6 +18,8 @@
 #define TEST_PACKET_STRING_LEN_OFFSET (8)
 #define TEST_PACKET_STRING_HEAD_OFFSET (9)
 
+#define NUM_POSSIBLE_TESTS (5)
+
 typedef enum PeripheralTestIdx
 {
 	TESTIDX_TIMER = 0,
