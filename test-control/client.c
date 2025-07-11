@@ -76,16 +76,11 @@ bool client_send_packet(void)
     return true;
 }
 
-void client_init(void)
+void client_init(char *server_ip_str)
 {
-    char server_ip_str[16] = {0};
-
     bzero(&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SERVER_PORT);
-
-    printf("Please input server IP.\n");
-    fgets(server_ip_str, 8, stdin);
 
     if (0 == inet_aton(server_ip_str, &server_addr.sin_addr))
     {
@@ -93,14 +88,11 @@ void client_init(void)
         exit(EXIT_FAILURE);
     }
 
-    if (should_terminate) return;
-
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
     {
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
-
 }
 
 void client_deinit(void)

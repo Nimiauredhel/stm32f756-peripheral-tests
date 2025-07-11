@@ -7,6 +7,7 @@
 
 extern char test_names[NUM_POSSIBLE_TESTS][8];
 
+void interface_init(void);
 void interface_loop(void);
 
 #endif
