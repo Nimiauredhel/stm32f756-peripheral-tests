@@ -69,7 +69,7 @@ bool client_send_packet(void)
 
     if (sent_bytes <= 0)
     {
-        perror("Sending failed");
+        perror("sendto failed");
         return false;
     }
 

@@ -40,8 +40,12 @@ void interface_loop(void)
 
         if(client_send_packet())
         {
-            printf("Sent Test Request.\n");
+            printf("Sent test request.\n");
             client_await_response(test_selection_byte);
+        }
+        else
+        {
+            printf("Failed to send test request.\n");
         }
     }
 }
