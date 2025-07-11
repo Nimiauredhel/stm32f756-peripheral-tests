@@ -6,47 +6,28 @@
  */
 #include "peripheral_tests.h"
 
-static bool test_uart(const char *test_string, const uint8_t len);
-static bool test_timer(const char *test_string, const uint8_t len);
-static bool test_spi(const char *test_string, const uint8_t len);
 static bool test_i2c(const char *test_string, const uint8_t len);
-static bool test_adc(const char *test_string, const uint8_t len);
+static bool test_spi(const char *test_string, const uint8_t len);
+static bool test_uart(const char *test_string, const uint8_t len);
 
 volatile uint8_t test_string_len = 0;
 char test_string_buff[TEST_STRING_MAX_LEN] = {0};
 
 TestDefinition_t test_defs[NUM_POSSIBLE_TESTS] =
 {
-	{ .name = "Timer\0", .state = TESTSTATE_READY, .func = test_timer, },
 	{ .name = "UART\0", .state = TESTSTATE_READY, .func = test_uart, },
-	{ .name = "SPI\0", .state = TESTSTATE_READY, .func = test_spi, },
 	{ .name = "I2C\0", .state = TESTSTATE_READY, .func = test_i2c, },
-	{ .name = "ADC\0", .state = TESTSTATE_READY, .func = test_adc, },
+	{ .name = "SPI\0", .state = TESTSTATE_READY, .func = test_spi, },
 };
-
-static bool test_timer(const char *test_string, const uint8_t len)
-{
-	return false;
-}
 
 static bool test_uart(const char *test_string, const uint8_t len)
 {
 	char uart_test_rx_buff[TEST_STRING_MAX_LEN] = {0};
 
-	HAL_UART_Receive_DMA(&huart6, (uint8_t *)uart_test_rx_buff, len);
-	HAL_UART_Transmit(&huart2, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
+	HAL_UART_Receive_IT(&huart6, (uint8_t *)uart_test_rx_buff, len);
+	HAL_UART_Transmit(&huart6, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
 
 	return (0 == strcmp(test_string, uart_test_rx_buff));
-}
-
-static bool test_spi(const char *test_string, const uint8_t len)
-{
-	char spi_rx_buff[TEST_STRING_MAX_LEN] = {0};
-
-	HAL_SPI_Receive_DMA(&hspi5, (uint8_t *)spi_rx_buff, len);
-	HAL_SPI_Transmit(&hspi3, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
-
-	return (0 == strcmp(test_string, spi_rx_buff));
 }
 
 static bool test_i2c(const char *test_string, const uint8_t len)
@@ -59,9 +40,13 @@ static bool test_i2c(const char *test_string, const uint8_t len)
 	return (0 == strcmp(test_string, i2c_rx_buff));
 }
 
-static bool test_adc(const char *test_string, const uint8_t len)
+static bool test_spi(const char *test_string, const uint8_t len)
 {
-	return false;
+	char spi_rx_buff[TEST_STRING_MAX_LEN] = {0};
+
+	HAL_SPI_TransmitReceive(&hspi1, (uint8_t *)test_string, (uint8_t *)spi_rx_buff, len, TEST_TIMEOUT_TICKS);
+
+	return (0 == strcmp(test_string, spi_rx_buff));
 }
 
 void test_listener_task_loop(void)
@@ -94,7 +79,7 @@ void test_listener_task_loop(void)
 
 				// confirm reception
 				packet_init(server_uart_tx_buff);
-				server_uart_tx_buff[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_ACK;
+				server_uart_tx_buff[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_ACK_DEVICE;
 				HAL_UART_Transmit(&huart2, server_uart_tx_buff, sizeof(server_uart_tx_buff), HAL_MAX_DELAY);
 				sprintf(debug_tx_buff, "\r\nDevice received test string: %s", test_string_buff);
 				serial_print_line(debug_tx_buff, 0);
