@@ -4,6 +4,8 @@ compile_commands.json
 temp/
 build/
 
+*.bak
+
 *.old
 *.lock
 
