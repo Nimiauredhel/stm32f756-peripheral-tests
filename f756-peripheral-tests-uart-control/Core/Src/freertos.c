@@ -46,7 +46,7 @@ typedef StaticTask_t osStaticThreadDef_t;
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+static bool lwip_initialized = false;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -219,6 +219,7 @@ void StartDefaultTask(void *argument)
   /* init code for LWIP */
   MX_LWIP_Init();
   /* USER CODE BEGIN StartDefaultTask */
+  lwip_initialized = true;
   /* Infinite loop */
   for(;;)
   {
@@ -237,6 +238,8 @@ void StartDefaultTask(void *argument)
 void StartListenerTask(void *argument)
 {
   /* USER CODE BEGIN StartListenerTask */
+  while (!lwip_initialized) vTaskDelay(pdMS_TO_TICKS(100));
+  test_listener_task_init();
   /* Infinite loop */
   for(;;)
   {

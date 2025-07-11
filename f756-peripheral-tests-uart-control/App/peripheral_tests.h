@@ -42,7 +42,6 @@ extern char test_string_buff[TEST_STRING_MAX_LEN];
 
 extern TestDefinition_t test_defs[NUM_POSSIBLE_TESTS];
 
-void test_listener_task_loop(void);
 void test_task_loop(TestDefinition_t *def);
 
 #endif /* INC_PERIPHERAL_TESTS_H_ */

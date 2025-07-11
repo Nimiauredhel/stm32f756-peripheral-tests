@@ -39,6 +39,7 @@ extern "C" {
 #include "test_packet_def.h"
 #include "uart_io.h"
 #include "peripheral_tests.h"
+#include "eth_server.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
