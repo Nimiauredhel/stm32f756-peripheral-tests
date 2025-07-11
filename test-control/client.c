@@ -116,6 +116,15 @@ void client_fill_packet(TestPacketMsg_t msg, uint32_t test_id, uint8_t test_sele
     tx_buffer[TEST_PACKET_ID_BYTE_OFFSET] = test_id;
     tx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] = test_selection;
     tx_buffer[TEST_PACKET_STRING_LEN_OFFSET] = str_len;
-    strncpy((char *)(tx_buffer+TEST_PACKET_STRING_HEAD_OFFSET), str_ptr, str_len);
+
+    if (str_len > 0 && str_ptr != NULL)
+    {
+        strncpy((char *)(tx_buffer+TEST_PACKET_STRING_HEAD_OFFSET), str_ptr, str_len);
+    }
+    else
+    {
+        explicit_bzero(tx_buffer+TEST_PACKET_STRING_HEAD_OFFSET, TEST_PACKET_STR_MAX_LEN);
+    }
+
     tx_buffer[TEST_PACKET_SIZE_BYTES-1] = TEST_PACKET_END_BYTE_VALUE;
 }
