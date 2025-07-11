@@ -60,16 +60,16 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = sizeof(defaultTaskBuffer),
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for UARTListenTask */
-osThreadId_t UARTListenTaskHandle;
-uint32_t UARTListenTaskBuffer[ 128 ];
-osStaticThreadDef_t UARTListenTaskControlBlock;
-const osThreadAttr_t UARTListenTask_attributes = {
-  .name = "UARTListenTask",
-  .cb_mem = &UARTListenTaskControlBlock,
-  .cb_size = sizeof(UARTListenTaskControlBlock),
-  .stack_mem = &UARTListenTaskBuffer[0],
-  .stack_size = sizeof(UARTListenTaskBuffer),
+/* Definitions for ListenerTask */
+osThreadId_t ListenerTaskHandle;
+uint32_t ListenerTaskBuffer[ 128 ];
+osStaticThreadDef_t ListenerTaskControlBlock;
+const osThreadAttr_t ListenerTask_attributes = {
+  .name = "ListenerTask",
+  .cb_mem = &ListenerTaskControlBlock,
+  .cb_size = sizeof(ListenerTaskControlBlock),
+  .stack_mem = &ListenerTaskBuffer[0],
+  .stack_size = sizeof(ListenerTaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
 /* Definitions for UARTTestTask */
@@ -108,6 +108,30 @@ const osThreadAttr_t SPITestTask_attributes = {
   .stack_size = sizeof(SPITestTaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for TimerTestTask */
+osThreadId_t TimerTestTaskHandle;
+uint32_t TimerTestTaskBuffer[ 128 ];
+osStaticThreadDef_t TimerTestTaskControlBlock;
+const osThreadAttr_t TimerTestTask_attributes = {
+  .name = "TimerTestTask",
+  .cb_mem = &TimerTestTaskControlBlock,
+  .cb_size = sizeof(TimerTestTaskControlBlock),
+  .stack_mem = &TimerTestTaskBuffer[0],
+  .stack_size = sizeof(TimerTestTaskBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for ADCTestTask */
+osThreadId_t ADCTestTaskHandle;
+uint32_t ADCTestTaskBuffer[ 128 ];
+osStaticThreadDef_t ADCTestTaskControlBlock;
+const osThreadAttr_t ADCTestTask_attributes = {
+  .name = "ADCTestTask",
+  .cb_mem = &ADCTestTaskControlBlock,
+  .cb_size = sizeof(ADCTestTaskControlBlock),
+  .stack_mem = &ADCTestTaskBuffer[0],
+  .stack_size = sizeof(ADCTestTaskBuffer),
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -115,10 +139,12 @@ const osThreadAttr_t SPITestTask_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-void StartUARTListenTask(void *argument);
+void StartListenerTask(void *argument);
 void StartUARTTestTask(void *argument);
 void StartI2CTestTask(void *argument);
 void StartSPITestTask(void *argument);
+void StartTimerTestTask(void *argument);
+void StartADCTestTask(void *argument);
 
 extern void MX_LWIP_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -153,8 +179,8 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of UARTListenTask */
-  UARTListenTaskHandle = osThreadNew(StartUARTListenTask, NULL, &UARTListenTask_attributes);
+  /* creation of ListenerTask */
+  ListenerTaskHandle = osThreadNew(StartListenerTask, NULL, &ListenerTask_attributes);
 
   /* creation of UARTTestTask */
   UARTTestTaskHandle = osThreadNew(StartUARTTestTask, NULL, &UARTTestTask_attributes);
@@ -164,6 +190,12 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of SPITestTask */
   SPITestTaskHandle = osThreadNew(StartSPITestTask, NULL, &SPITestTask_attributes);
+
+  /* creation of TimerTestTask */
+  TimerTestTaskHandle = osThreadNew(StartTimerTestTask, NULL, &TimerTestTask_attributes);
+
+  /* creation of ADCTestTask */
+  ADCTestTaskHandle = osThreadNew(StartADCTestTask, NULL, &ADCTestTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -195,22 +227,22 @@ void StartDefaultTask(void *argument)
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_StartUARTListenTask */
+/* USER CODE BEGIN Header_StartListenerTask */
 /**
-* @brief Function implementing the UARTListenTask thread.
+* @brief Function implementing the ListenerTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartUARTListenTask */
-void StartUARTListenTask(void *argument)
+/* USER CODE END Header_StartListenerTask */
+void StartListenerTask(void *argument)
 {
-  /* USER CODE BEGIN StartUARTListenTask */
+  /* USER CODE BEGIN StartListenerTask */
   /* Infinite loop */
   for(;;)
   {
 	  test_listener_task_loop();
   }
-  /* USER CODE END StartUARTListenTask */
+  /* USER CODE END StartListenerTask */
 }
 
 /* USER CODE BEGIN Header_StartUARTTestTask */
@@ -265,6 +297,42 @@ void StartSPITestTask(void *argument)
 	  test_task_loop(&test_defs[TESTIDX_SPI]);
   }
   /* USER CODE END StartSPITestTask */
+}
+
+/* USER CODE BEGIN Header_StartTimerTestTask */
+/**
+* @brief Function implementing the TimerTestTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTimerTestTask */
+void StartTimerTestTask(void *argument)
+{
+  /* USER CODE BEGIN StartTimerTestTask */
+  /* Infinite loop */
+  for(;;)
+  {
+	  test_task_loop(&test_defs[TESTIDX_TIMER]);
+  }
+  /* USER CODE END StartTimerTestTask */
+}
+
+/* USER CODE BEGIN Header_StartADCTestTask */
+/**
+* @brief Function implementing the ADCTestTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartADCTestTask */
+void StartADCTestTask(void *argument)
+{
+  /* USER CODE BEGIN StartADCTestTask */
+  /* Infinite loop */
+  for(;;)
+  {
+	  test_task_loop(&test_defs[TESTIDX_ADC]);
+  }
+  /* USER CODE END StartADCTestTask */
 }
 
 /* Private application code --------------------------------------------------*/
