@@ -9,8 +9,13 @@ void interface_init(void)
 {
     char server_ip_str[24] = {0};
     printf("Please input server IP.\n");
-    fgets(server_ip_str, 16, stdin);
-    fflush(stdin);
+    fgets(server_ip_str, 24, stdin);
+
+    if (strlen(server_ip_str) < 7)
+    {
+        printf("Defaulting to localhost.\n");
+        sprintf(server_ip_str, "127.0.0.1");
+    }
 
     client_init(server_ip_str);
 }
@@ -24,11 +29,10 @@ void interface_loop(void)
         printf("Please input a test string.\n");
         explicit_bzero(user_input_buffer, sizeof(user_input_buffer));
         fgets(user_input_buffer, sizeof(user_input_buffer), stdin);
-        fflush(stdin);
         printf("Given input: %s\n", user_input_buffer);
 
         bool selection_valid = false;
-        char test_selection_input[2] = {0};
+        char test_selection_input[4] = {0};
         uint8_t test_selection_byte = 0;
 
         while (!selection_valid)
@@ -36,11 +40,10 @@ void interface_loop(void)
             if (should_terminate) break;
 
             printf("\nSelect a test combination [TIMER|UART|SPI|I2C|ADC]:\n");
-            fgets(test_selection_input, 2, stdin);
-            fflush(stdin);
-            test_selection_byte = atoi(test_selection_input);
+            fgets(test_selection_input, 4, stdin);
+            test_selection_byte = (uint8_t)atoi(test_selection_input);
 
-            selection_valid = test_selection_byte > 0 && test_selection_byte <= 7;
+            selection_valid = test_selection_byte > 0 && test_selection_byte <= 31;
         }
 
         if (should_terminate)
