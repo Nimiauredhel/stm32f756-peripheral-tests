@@ -53,8 +53,8 @@ static bool test_i2c(const char *test_string, const uint8_t len)
 {
 	char i2c_rx_buff[TEST_STRING_MAX_LEN] = {0};
 
-	HAL_I2C_Master_Transmit_IT(&hi2c1, hi2c2.Init.OwnAddress1, (uint8_t *)test_string, len);
-	HAL_I2C_Slave_Receive(&hi2c2, (uint8_t *)i2c_rx_buff, len, TEST_TIMEOUT_TICKS);
+	HAL_I2C_Slave_Receive_DMA(&hi2c1, (uint8_t *)i2c_rx_buff, len);
+	HAL_I2C_Master_Transmit(&hi2c2, hi2c1.Init.OwnAddress1, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
 
 	return (0 == strcmp(test_string, i2c_rx_buff));
 }
