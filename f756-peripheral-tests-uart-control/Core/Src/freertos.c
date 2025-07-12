@@ -50,7 +50,7 @@ static bool lwip_initialized = false;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
-uint32_t defaultTaskBuffer[ 128 ];
+uint32_t defaultTaskBuffer[ 256 ];
 osStaticThreadDef_t defaultTaskControlBlock;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
@@ -62,7 +62,7 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* Definitions for ListenerTask */
 osThreadId_t ListenerTaskHandle;
-uint32_t ListenerTaskBuffer[ 128 ];
+uint32_t ListenerTaskBuffer[ 512 ];
 osStaticThreadDef_t ListenerTaskControlBlock;
 const osThreadAttr_t ListenerTask_attributes = {
   .name = "ListenerTask",
@@ -70,7 +70,7 @@ const osThreadAttr_t ListenerTask_attributes = {
   .cb_size = sizeof(ListenerTaskControlBlock),
   .stack_mem = &ListenerTaskBuffer[0],
   .stack_size = sizeof(ListenerTaskBuffer),
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 /* Definitions for UARTTestTask */
 osThreadId_t UARTTestTaskHandle;
@@ -238,6 +238,7 @@ void StartDefaultTask(void *argument)
 void StartListenerTask(void *argument)
 {
   /* USER CODE BEGIN StartListenerTask */
+  vTaskDelay(pdMS_TO_TICKS(200));
   while (!lwip_initialized) vTaskDelay(pdMS_TO_TICKS(100));
   test_listener_task_init();
   /* Infinite loop */

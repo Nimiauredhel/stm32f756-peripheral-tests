@@ -7,8 +7,11 @@
 
 
 #include "eth_server.h"
+#include "lwip.h"
 #include "lwip/api.h"
 #include "lwip/ip_addr.h"
+
+extern struct netif gnetif;
 
 typedef struct TestClientSlot
 {
@@ -24,7 +27,7 @@ static TestClientSlot_t client_slot = {0};
 
 void test_listener_task_init(void)
 {
-	serial_print_line("Ethernet Listener Task started.", 0);
+	serial_print_line("\r\nEthernet Listener Task started.", 0);
 
 	explicit_bzero(&client_slot, sizeof(client_slot));
 
@@ -32,16 +35,28 @@ void test_listener_task_init(void)
 
 	if (listener_conn == NULL)
 	{
-		printf("Failed to create listener connection.\n");
+		serial_print_line("Failed to create listener connection.", 0);
 		vTaskDelay(pdMS_TO_TICKS(1000));
 		HAL_NVIC_SystemReset();
 	}
 
-	if (ERR_OK != netconn_bind(listener_conn, IP_ADDR_ANY, SERVER_PORT))
+	while(ip4_addr_isany_val(*netif_ip4_addr(&gnetif)))
 	{
-		printf("Failed to bind listener connection.\n");
+		serial_print_line("Waiting for valid IP address.", 0);
+		vTaskDelay(pdMS_TO_TICKS(1000));
+	}
+    serial_print("Server IP is:", 0);
+    serial_print_line(ip4addr_ntoa(netif_ip4_addr(&gnetif)), 0);
+
+	if (ERR_OK != netconn_bind(listener_conn, netif_ip4_addr(&gnetif), SERVER_PORT))
+	{
+		serial_print_line("Failed to bind listener connection.", 0);
 		vTaskDelay(pdMS_TO_TICKS(1000));
 		HAL_NVIC_SystemReset();
+	}
+	else
+	{
+		serial_print_line("Bound netconn.", 0);
 	}
 }
 
@@ -145,6 +160,10 @@ void test_listener_task_loop(void)
 			{
 				serial_print(".", 1);
 			}
+	  }
+	  else
+	  {
+			serial_print_line("\nnetconn_recv error.", 0);
 	  }
   }
 }
