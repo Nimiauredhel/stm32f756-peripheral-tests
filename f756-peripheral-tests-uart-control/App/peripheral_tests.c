@@ -5,6 +5,7 @@
  *      Author: mickey
  */
 #include "peripheral_tests.h"
+#include <math.h>
 
 static bool test_uart(const char *test_string, const uint8_t len);
 static bool test_timer(const char *test_string, const uint8_t len);
@@ -35,25 +36,32 @@ TestDefinition_t test_defs[NUM_POSSIBLE_TESTS] =
 
 static bool test_timer(const char *test_string, const uint8_t len)
 {
-	uint32_t duty_val = htim1.Instance->ARR / 4;
+	static const uint8_t reps = 8;
 
-	htim1.Instance->CCR3 = duty_val;
-	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-	HAL_TIM_IC_Start(&htim1, TIM_CHANNEL_2);
-	vTaskDelay(pdMS_TO_TICKS(500));
-	uint32_t ic_result = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2);
-	HAL_TIM_IC_Stop(&htim1, TIM_CHANNEL_2);
-	HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
-	/*
-	char ic_buff[64] = {0};
-	snprintf(ic_buff, 64, "Expected: %lu, IC value: %lu", duty_val, ic_result);
-	serial_print_line(ic_buff, 0);
-	*/
+	for (int i = 0; i < reps; i++)
+	{
+		uint32_t duty_val = htim1.Instance->ARR / pow(2, i+1);
+		htim1.Instance->CCR3 = duty_val;
+		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+		HAL_TIM_IC_Start(&htim1, TIM_CHANNEL_2);
+		vTaskDelay(pdMS_TO_TICKS(50));
+		HAL_TIM_IC_Stop(&htim1, TIM_CHANNEL_2);
+		HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+		uint32_t ic_result = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2);
 
-	uint32_t margin = ic_result > duty_val ? ic_result - duty_val
-			: duty_val - ic_result;
+		/*
+		char ic_buff[64] = {0};
+		snprintf(ic_buff, 64, "Expected: %lu, IC value: %lu", duty_val, ic_result);
+		serial_print_line(ic_buff, 0);
+		*/
 
-	return (margin <= 10);
+		uint32_t margin = ic_result > duty_val ? ic_result - duty_val
+				: duty_val - ic_result;
+
+		if (margin > 10) return false;
+	}
+
+	return true;
 }
 
 static bool test_uart(const char *test_string, const uint8_t len)
