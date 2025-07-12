@@ -14,6 +14,7 @@ static bool test_adc(const char *test_string, const uint8_t len);
 
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart6;
+extern TIM_HandleTypeDef htim1;
 extern SPI_HandleTypeDef hspi3;
 extern SPI_HandleTypeDef hspi5;
 extern I2C_HandleTypeDef hi2c1;
@@ -34,7 +35,25 @@ TestDefinition_t test_defs[NUM_POSSIBLE_TESTS] =
 
 static bool test_timer(const char *test_string, const uint8_t len)
 {
-	return false;
+	uint32_t duty_val = htim1.Instance->ARR / 4;
+
+	htim1.Instance->CCR3 = duty_val;
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+	HAL_TIM_IC_Start(&htim1, TIM_CHANNEL_2);
+	vTaskDelay(pdMS_TO_TICKS(500));
+	uint32_t ic_result = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2);
+	HAL_TIM_IC_Stop(&htim1, TIM_CHANNEL_2);
+	HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+	/*
+	char ic_buff[64] = {0};
+	snprintf(ic_buff, 64, "Expected: %lu, IC value: %lu", duty_val, ic_result);
+	serial_print_line(ic_buff, 0);
+	*/
+
+	uint32_t margin = ic_result > duty_val ? ic_result - duty_val
+			: duty_val - ic_result;
+
+	return (margin <= 10);
 }
 
 static bool test_uart(const char *test_string, const uint8_t len)
