@@ -30,13 +30,6 @@ typedef struct TestDefinition
 	bool (*func)(const char*, const uint8_t);
 } TestDefinition_t;
 
-extern I2C_HandleTypeDef hi2c1;
-extern I2C_HandleTypeDef hi2c2;
-extern SPI_HandleTypeDef hspi3;
-extern SPI_HandleTypeDef hspi5;
-extern UART_HandleTypeDef huart2;
-extern UART_HandleTypeDef huart6;
-
 extern volatile uint8_t test_string_len;
 extern char test_string_buff[TEST_STRING_MAX_LEN];
 

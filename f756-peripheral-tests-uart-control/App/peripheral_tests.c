@@ -12,6 +12,14 @@ static bool test_spi(const char *test_string, const uint8_t len);
 static bool test_i2c(const char *test_string, const uint8_t len);
 static bool test_adc(const char *test_string, const uint8_t len);
 
+extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef huart6;
+extern SPI_HandleTypeDef hspi3;
+extern SPI_HandleTypeDef hspi5;
+extern I2C_HandleTypeDef hi2c1;
+extern I2C_HandleTypeDef hi2c2;
+extern ADC_HandleTypeDef hadc1;
+
 volatile uint8_t test_string_len = 0;
 char test_string_buff[TEST_STRING_MAX_LEN] = {0};
 
@@ -61,7 +69,16 @@ static bool test_i2c(const char *test_string, const uint8_t len)
 
 static bool test_adc(const char *test_string, const uint8_t len)
 {
-	return false;
+	static const uint32_t adc_min_val = 4000;
+	static const uint32_t adc_max_val = 4095;
+
+	uint32_t adc_val = 0;
+
+	HAL_ADC_Start_DMA(&hadc1, &adc_val, 1);
+	HAL_ADC_PollForConversion(&hadc1, TEST_TIMEOUT_TICKS);
+	HAL_ADC_Stop_DMA(&hadc1);
+
+	return (adc_val >= adc_min_val && adc_val <= adc_max_val);
 }
 
 void test_task_loop(TestDefinition_t *def)
