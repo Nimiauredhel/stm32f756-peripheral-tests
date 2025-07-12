@@ -12,7 +12,8 @@
 #include "packet_ops.h"
 
 #define TEST_STRING_MAX_LEN (TEST_PACKET_STR_MAX_LEN)
-#define TEST_TIMEOUT_TICKS (pdMS_TO_TICKS(3000))
+#define TEST_TIMEOUT_TICKS (pdMS_TO_TICKS(10000))
+#define TEST_GAP_TICKS (pdMS_TO_TICKS(500))
 
 typedef volatile enum PeripheralTestState
 {

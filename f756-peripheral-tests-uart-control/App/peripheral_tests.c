@@ -66,32 +66,60 @@ static bool test_timer(const char *test_string, const uint8_t len)
 
 static bool test_uart(const char *test_string, const uint8_t len)
 {
-	char uart_test_rx_buff[TEST_STRING_MAX_LEN] = {0};
+	char uart_test_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
+	char uart_test_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
 
-	HAL_UART_Receive_DMA(&huart6, (uint8_t *)uart_test_rx_buff, len);
+	HAL_UART_Receive_DMA(&huart6, (uint8_t *)uart_test_rx_buff_1, len);
 	HAL_UART_Transmit(&huart2, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
+	vTaskDelay(TEST_GAP_TICKS);
 
-	return (0 == strcmp(test_string, uart_test_rx_buff));
+	if (0 != strcmp(test_string, uart_test_rx_buff_1)) return false;
+
+	HAL_UART_Receive_DMA(&huart2, (uint8_t *)uart_test_rx_buff_2, len);
+	HAL_UART_Transmit(&huart6, (uint8_t *)uart_test_rx_buff_1, len, TEST_TIMEOUT_TICKS);
+	vTaskDelay(TEST_GAP_TICKS);
+
+	return (0 == strcmp(test_string, uart_test_rx_buff_2));
 }
 
 static bool test_spi(const char *test_string, const uint8_t len)
 {
-	char spi_rx_buff[TEST_STRING_MAX_LEN] = {0};
+	char spi_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
+	char spi_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
 
-	HAL_SPI_Receive_DMA(&hspi5, (uint8_t *)spi_rx_buff, len);
+	HAL_SPI_Receive_DMA(&hspi5, (uint8_t *)spi_rx_buff_1, len);
 	HAL_SPI_Transmit(&hspi3, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
+	vTaskDelay(TEST_GAP_TICKS);
+	HAL_SPI_DMAStop(&hspi5);
+	serial_print_line(spi_rx_buff_1, len);
 
-	return (0 == strcmp(test_string, spi_rx_buff));
+	if (0 != strcmp(test_string, spi_rx_buff_1)) return false;
+
+	HAL_SPI_Transmit_DMA(&hspi5, (uint8_t *)spi_rx_buff_1, len);
+	HAL_SPI_Receive(&hspi3, (uint8_t *)spi_rx_buff_2, len, TEST_TIMEOUT_TICKS);
+	vTaskDelay(TEST_GAP_TICKS);
+	HAL_SPI_DMAStop(&hspi5);
+	serial_print_line(spi_rx_buff_2, len);
+
+	return (0 == strcmp(test_string, spi_rx_buff_2));
 }
 
 static bool test_i2c(const char *test_string, const uint8_t len)
 {
-	char i2c_rx_buff[TEST_STRING_MAX_LEN] = {0};
+	char i2c_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
+	char i2c_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
 
-	HAL_I2C_Slave_Receive_DMA(&hi2c1, (uint8_t *)i2c_rx_buff, len);
+	HAL_I2C_Slave_Receive_DMA(&hi2c1, (uint8_t *)i2c_rx_buff_1, len);
 	HAL_I2C_Master_Transmit(&hi2c2, hi2c1.Init.OwnAddress1, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
+	vTaskDelay(TEST_GAP_TICKS);
 
-	return (0 == strcmp(test_string, i2c_rx_buff));
+	if (0 != strcmp(test_string, i2c_rx_buff_1)) return false;
+
+	HAL_I2C_Slave_Transmit_DMA(&hi2c1, (uint8_t *)i2c_rx_buff_1, len);
+	HAL_I2C_Master_Receive(&hi2c2, hi2c1.Init.OwnAddress1, (uint8_t *)i2c_rx_buff_2, len, TEST_TIMEOUT_TICKS);
+	vTaskDelay(TEST_GAP_TICKS);
+
+	return (0 == strcmp(test_string, i2c_rx_buff_2));
 }
 
 static bool test_adc(const char *test_string, const uint8_t len)
