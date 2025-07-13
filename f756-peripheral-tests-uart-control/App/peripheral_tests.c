@@ -86,20 +86,18 @@ static bool test_spi(const char *test_string, const uint8_t len)
 {
 	char spi_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
 	char spi_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
+	char spi_rx_buff_dummy[TEST_STRING_MAX_LEN] = {0};
+	char spi_tx_buff_dummy[TEST_STRING_MAX_LEN] = {0};
 
 	HAL_SPI_Receive_DMA(&hspi5, (uint8_t *)spi_rx_buff_1, len);
 	HAL_SPI_Transmit(&hspi3, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
 	vTaskDelay(TEST_GAP_TICKS);
-	HAL_SPI_DMAStop(&hspi5);
-	serial_print_line(spi_rx_buff_1, len);
 
 	if (0 != strcmp(test_string, spi_rx_buff_1)) return false;
 
-	HAL_SPI_Transmit_DMA(&hspi5, (uint8_t *)spi_rx_buff_1, len);
-	HAL_SPI_Receive(&hspi3, (uint8_t *)spi_rx_buff_2, len, TEST_TIMEOUT_TICKS);
+	HAL_SPI_TransmitReceive_DMA(&hspi5, (uint8_t *)spi_rx_buff_1, (uint8_t *)spi_rx_buff_dummy, len);
+	HAL_SPI_TransmitReceive(&hspi3, (uint8_t *)spi_tx_buff_dummy, (uint8_t *)spi_rx_buff_2, len, TEST_TIMEOUT_TICKS);
 	vTaskDelay(TEST_GAP_TICKS);
-	HAL_SPI_DMAStop(&hspi5);
-	serial_print_line(spi_rx_buff_2, len);
 
 	return (0 == strcmp(test_string, spi_rx_buff_2));
 }
