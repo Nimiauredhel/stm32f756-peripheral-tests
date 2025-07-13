@@ -3,18 +3,20 @@
 
 /***
  * Packet Structure:
- * [START(1)][TEST ID(4)[MSG(1)][SELECTION(1)][ITERATIONS(1)][STRLEN(1)][STRING(32)][END(1)]
- * 0         1          5       6             7              8          9           41
+ * [START(1)][TEST ID(4)[MSG(1)][SELECTION(1)][ITERATIONS(1)][STRLEN(1)][STRING(0-150)][END(1)]
+ * 0         1          5       6             7              8          9              10-159
  ***/
 
-#define TEST_PACKET_SIZE_BYTES (42)
+#define TEST_PACKET_EMPTY_SIZE_BYTES (10)
+#define TEST_PACKET_MAX_SIZE_BYTES (160)
 #define TEST_PACKET_START_BYTE_VALUE (123)
 #define TEST_PACKET_END_BYTE_VALUE (0)
-#define TEST_PACKET_STR_MAX_LEN (32)
+#define TEST_PACKET_STR_MAX_LEN (150)
 
 #define TEST_PACKET_ID_BYTE_OFFSET (1)
 #define TEST_PACKET_MSG_BYTE_OFFSET (5)
 #define TEST_PACKET_SELECTION_BYTE_OFFSET (6)
+#define TEST_PACKET_ITERATIONS_BYTE_OFFSET (7)
 #define TEST_PACKET_STRING_LEN_OFFSET (8)
 #define TEST_PACKET_STRING_HEAD_OFFSET (9)
 

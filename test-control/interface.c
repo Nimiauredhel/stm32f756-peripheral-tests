@@ -43,13 +43,13 @@ void interface_loop(void)
             input_str_len -= 1;
         }
 
-        printf("Given input: %s\n", user_input_buffer);
+        printf("Given input:\n %s\n\n", user_input_buffer);
 
         while (!selection_valid)
         {
             if (should_terminate) break;
 
-            printf("\nSelect a test combination [TIMER|UART|SPI|I2C|ADC]:\n");
+            printf("Select a test combination [TIMER|UART|SPI|I2C|ADC]:\n");
             fgets(test_selection_input, 4, stdin);
             test_selection_byte = (uint8_t)atoi(test_selection_input);
 

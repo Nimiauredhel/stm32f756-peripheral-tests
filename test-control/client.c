@@ -5,8 +5,8 @@
 static int sockfd = 0;
 static struct sockaddr_in server_addr;
 static socklen_t server_addr_len = sizeof(server_addr);
-static uint8_t tx_buffer[TEST_PACKET_SIZE_BYTES] = {0};
-static uint8_t rx_buffer[TEST_PACKET_SIZE_BYTES] = {0};
+static uint8_t tx_buffer[TEST_PACKET_MAX_SIZE_BYTES] = {0};
+static uint8_t rx_buffer[TEST_PACKET_MAX_SIZE_BYTES] = {0};
 
 void client_await_response(uint8_t test_selection_byte)
 {
@@ -20,7 +20,7 @@ void client_await_response(uint8_t test_selection_byte)
         {
             perror("Receiving failed");
         }
-        else if (rx_buffer[0] == TEST_PACKET_START_BYTE_VALUE && rx_buffer[TEST_PACKET_SIZE_BYTES -1] == TEST_PACKET_END_BYTE_VALUE)
+        else if (rx_buffer[0] == TEST_PACKET_START_BYTE_VALUE)
         {
             switch((TestPacketMsg_t)rx_buffer[TEST_PACKET_MSG_BYTE_OFFSET])
             {
@@ -65,13 +65,16 @@ void client_await_response(uint8_t test_selection_byte)
 
 bool client_send_packet(void)
 {
-    int sent_bytes = sendto(sockfd, tx_buffer, sizeof(tx_buffer), 0, (struct sockaddr*)&server_addr, server_addr_len);
+    uint8_t packet_size = TEST_PACKET_EMPTY_SIZE_BYTES + tx_buffer[TEST_PACKET_STRING_LEN_OFFSET];
+    int sent_bytes = sendto(sockfd, tx_buffer, packet_size, 0, (struct sockaddr*)&server_addr, server_addr_len);
 
     if (sent_bytes <= 0)
     {
         perror("sendto failed");
         return false;
     }
+
+    printf("Sent test packet of size %u.\n", packet_size);
 
     return true;
 }
@@ -100,13 +103,14 @@ void client_deinit(void)
     if (sockfd > 0) close(sockfd);
 }
 
-void client_fill_packet(TestPacketMsg_t msg, uint32_t test_id, uint8_t test_selection, uint8_t str_len, char *str_ptr)
+void client_fill_packet(TestPacketMsg_t msg, uint32_t test_id, uint8_t test_selection, uint8_t iterations, uint8_t str_len, char *str_ptr)
 {
     explicit_bzero(tx_buffer, sizeof(tx_buffer));
     tx_buffer[0] = TEST_PACKET_START_BYTE_VALUE;
     tx_buffer[TEST_PACKET_MSG_BYTE_OFFSET] = msg;
     tx_buffer[TEST_PACKET_ID_BYTE_OFFSET] = test_id;
     tx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] = test_selection;
+    tx_buffer[TEST_PACKET_ITERATIONS_BYTE_OFFSET] = iterations;
     tx_buffer[TEST_PACKET_STRING_LEN_OFFSET] = str_len;
 
     if (str_len > 0 && str_ptr != NULL)
@@ -118,5 +122,5 @@ void client_fill_packet(TestPacketMsg_t msg, uint32_t test_id, uint8_t test_sele
         explicit_bzero(tx_buffer+TEST_PACKET_STRING_HEAD_OFFSET, TEST_PACKET_STR_MAX_LEN);
     }
 
-    tx_buffer[TEST_PACKET_SIZE_BYTES-1] = TEST_PACKET_END_BYTE_VALUE;
+    tx_buffer[TEST_PACKET_STRING_HEAD_OFFSET+str_len] = TEST_PACKET_END_BYTE_VALUE;
 }
