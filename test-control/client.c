@@ -108,7 +108,7 @@ void client_fill_packet(TestPacketMsg_t msg, uint32_t test_id, uint8_t test_sele
     explicit_bzero(tx_buffer, sizeof(tx_buffer));
     tx_buffer[0] = TEST_PACKET_START_BYTE_VALUE;
     tx_buffer[TEST_PACKET_MSG_BYTE_OFFSET] = msg;
-    tx_buffer[TEST_PACKET_ID_BYTE_OFFSET] = test_id;
+    *(uint32_t *)(tx_buffer+TEST_PACKET_ID_BYTE_OFFSET) = test_id;
     tx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] = test_selection;
     tx_buffer[TEST_PACKET_ITERATIONS_BYTE_OFFSET] = iterations;
     tx_buffer[TEST_PACKET_STRING_LEN_OFFSET] = str_len;

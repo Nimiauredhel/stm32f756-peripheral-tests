@@ -61,7 +61,7 @@ void interface_loop(void)
             break;
         }
 
-        client_fill_packet(TESTMSG_NEWTEST, 1234, test_selection_byte, input_str_len, user_input_buffer);
+        client_fill_packet(TESTMSG_NEWTEST, 1234, test_selection_byte, 1, input_str_len, user_input_buffer);
 
         if(client_send_packet())
         {
