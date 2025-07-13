@@ -66,8 +66,11 @@ static bool test_timer(const char *test_string, const uint8_t len)
 
 static bool test_uart(const char *test_string, const uint8_t len)
 {
-	char uart_test_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
-	char uart_test_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
+	static char uart_test_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
+	static char uart_test_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
+
+	bzero(uart_test_rx_buff_1, sizeof(uart_test_rx_buff_1));
+	bzero(uart_test_rx_buff_2, sizeof(uart_test_rx_buff_2));
 
 	HAL_UART_Receive_DMA(&huart6, (uint8_t *)uart_test_rx_buff_1, len);
 	HAL_UART_Transmit(&huart2, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
@@ -84,10 +87,13 @@ static bool test_uart(const char *test_string, const uint8_t len)
 
 static bool test_spi(const char *test_string, const uint8_t len)
 {
-	char spi_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
-	char spi_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
-	char spi_rx_buff_dummy[TEST_STRING_MAX_LEN] = {0};
-	char spi_tx_buff_dummy[TEST_STRING_MAX_LEN] = {0};
+	static char spi_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
+	static char spi_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
+	static char spi_rx_buff_dummy[TEST_STRING_MAX_LEN] = {0};
+	static char spi_tx_buff_dummy[TEST_STRING_MAX_LEN] = {0};
+
+	bzero(spi_rx_buff_1, sizeof(spi_rx_buff_1));
+	bzero(spi_rx_buff_2, sizeof(spi_rx_buff_2));
 
 	HAL_SPI_Receive_DMA(&hspi5, (uint8_t *)spi_rx_buff_1, len);
 	HAL_SPI_Transmit(&hspi3, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
@@ -104,8 +110,11 @@ static bool test_spi(const char *test_string, const uint8_t len)
 
 static bool test_i2c(const char *test_string, const uint8_t len)
 {
-	char i2c_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
-	char i2c_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
+	static char i2c_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
+	static char i2c_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
+
+	bzero(i2c_rx_buff_1, sizeof(i2c_rx_buff_1));
+	bzero(i2c_rx_buff_2, sizeof(i2c_rx_buff_2));
 
 	HAL_I2C_Slave_Receive_DMA(&hi2c1, (uint8_t *)i2c_rx_buff_1, len);
 	HAL_I2C_Master_Transmit(&hi2c2, hi2c1.Init.OwnAddress1, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
