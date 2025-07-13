@@ -29,11 +29,21 @@ void interface_loop(void)
         printf("Please input a test string.\n");
         explicit_bzero(user_input_buffer, sizeof(user_input_buffer));
         fgets(user_input_buffer, sizeof(user_input_buffer), stdin);
-        printf("Given input: %s\n", user_input_buffer);
 
         bool selection_valid = false;
         char test_selection_input[4] = {0};
         uint8_t test_selection_byte = 0;
+        uint8_t input_str_len = strlen(user_input_buffer);
+
+        while (user_input_buffer[input_str_len-1] == '\r'
+            || user_input_buffer[input_str_len-1] == '\n'
+            || user_input_buffer[input_str_len-1] == ' ')
+        {
+            user_input_buffer[input_str_len-1] = '\0';
+            input_str_len -= 1;
+        }
+
+        printf("Given input: %s\n", user_input_buffer);
 
         while (!selection_valid)
         {
@@ -51,7 +61,7 @@ void interface_loop(void)
             break;
         }
 
-        client_fill_packet(TESTMSG_NEWTEST, 1234, test_selection_byte, strlen(user_input_buffer), user_input_buffer);
+        client_fill_packet(TESTMSG_NEWTEST, 1234, test_selection_byte, input_str_len, user_input_buffer);
 
         if(client_send_packet())
         {
