@@ -37,9 +37,11 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include "test_packet_def.h"
-#include "uart_io.h"
+#include <serial_debug.h>
 #include "peripheral_tests.h"
-#include "eth_server.h"
+#include "listener.h"
+#include "transmitter.h"
+#include "test_runner.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/

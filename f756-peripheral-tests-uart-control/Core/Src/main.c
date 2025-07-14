@@ -108,7 +108,7 @@ int main(void)
   MX_ADC1_Init();
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
-  serial_uart_initialize();
+  serial_debug_initialize();
   /* USER CODE END 2 */
 
   /* Init scheduler */

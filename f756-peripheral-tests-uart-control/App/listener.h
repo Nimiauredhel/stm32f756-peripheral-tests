@@ -5,8 +5,8 @@
  *      Author: mickey
  */
 
-#ifndef ETH_SERVER_H_
-#define ETH_SERVER_H_
+#ifndef LISTENER_H_
+#define LISTENER_H_
 
 #define SERVER_PORT (45678)
 
@@ -17,4 +17,4 @@
 void test_listener_task_init(void);
 void test_listener_task_loop(void);
 
-#endif /* ETH_SERVER_H_ */
+#endif /* LISTENER_H_ */

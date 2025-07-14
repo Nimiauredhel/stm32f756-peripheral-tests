@@ -4,9 +4,10 @@
  *  Created on: Jul 7, 2025
  *      Author: mickey
  */
+#include <math.h>
+
 #include "main.h"
 #include "peripheral_tests.h"
-#include <math.h>
 
 static bool test_uart(const char *test_string, const uint8_t len);
 static bool test_timer(const char *test_string, const uint8_t len);
@@ -55,7 +56,7 @@ static bool test_timer(const char *test_string, const uint8_t len)
 		/*
 		char ic_buff[64] = {0};
 		snprintf(ic_buff, 64, "Expected: %lu, IC value: %lu", duty_val, ic_result);
-		serial_print_line(ic_buff, 0);
+		serial_debug_enqueue(ic_buff, 0);
 		*/
 
 		uint32_t margin = ic_result > duty_val ? ic_result - duty_val

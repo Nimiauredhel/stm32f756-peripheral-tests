@@ -30,6 +30,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 typedef StaticTask_t osStaticThreadDef_t;
+typedef StaticQueue_t osStaticMessageQDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -82,7 +83,7 @@ const osThreadAttr_t UARTTestTask_attributes = {
   .cb_size = sizeof(UARTTestTaskControlBlock),
   .stack_mem = &UARTTestTaskBuffer[0],
   .stack_size = sizeof(UARTTestTaskBuffer),
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for I2CTestTask */
 osThreadId_t I2CTestTaskHandle;
@@ -94,7 +95,7 @@ const osThreadAttr_t I2CTestTask_attributes = {
   .cb_size = sizeof(I2CTestTaskControlBlock),
   .stack_mem = &I2CTestTaskBuffer[0],
   .stack_size = sizeof(I2CTestTaskBuffer),
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for SPITestTask */
 osThreadId_t SPITestTaskHandle;
@@ -106,7 +107,7 @@ const osThreadAttr_t SPITestTask_attributes = {
   .cb_size = sizeof(SPITestTaskControlBlock),
   .stack_mem = &SPITestTaskBuffer[0],
   .stack_size = sizeof(SPITestTaskBuffer),
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for TimerTestTask */
 osThreadId_t TimerTestTaskHandle;
@@ -118,11 +119,11 @@ const osThreadAttr_t TimerTestTask_attributes = {
   .cb_size = sizeof(TimerTestTaskControlBlock),
   .stack_mem = &TimerTestTaskBuffer[0],
   .stack_size = sizeof(TimerTestTaskBuffer),
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for ADCTestTask */
 osThreadId_t ADCTestTaskHandle;
-uint32_t ADCTestTaskBuffer[ 256 ];
+uint32_t ADCTestTaskBuffer[ 512 ];
 osStaticThreadDef_t ADCTestTaskControlBlock;
 const osThreadAttr_t ADCTestTask_attributes = {
   .name = "ADCTestTask",
@@ -130,7 +131,76 @@ const osThreadAttr_t ADCTestTask_attributes = {
   .cb_size = sizeof(ADCTestTaskControlBlock),
   .stack_mem = &ADCTestTaskBuffer[0],
   .stack_size = sizeof(ADCTestTaskBuffer),
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for TransmitterTask */
+osThreadId_t TransmitterTaskHandle;
+uint32_t TransmitterTaskBuffer[ 1024 ];
+osStaticThreadDef_t TransmitterTaskControlBlock;
+const osThreadAttr_t TransmitterTask_attributes = {
+  .name = "TransmitterTask",
+  .cb_mem = &TransmitterTaskControlBlock,
+  .cb_size = sizeof(TransmitterTaskControlBlock),
+  .stack_mem = &TransmitterTaskBuffer[0],
+  .stack_size = sizeof(TransmitterTaskBuffer),
+  .priority = (osPriority_t) osPriorityHigh,
+};
+/* Definitions for TestRunnerTask */
+osThreadId_t TestRunnerTaskHandle;
+uint32_t TestRunnerTaskBuffer[ 1024 ];
+osStaticThreadDef_t TestRunnerTaskControlBlock;
+const osThreadAttr_t TestRunnerTask_attributes = {
+  .name = "TestRunnerTask",
+  .cb_mem = &TestRunnerTaskControlBlock,
+  .cb_size = sizeof(TestRunnerTaskControlBlock),
+  .stack_mem = &TestRunnerTaskBuffer[0],
+  .stack_size = sizeof(TestRunnerTaskBuffer),
+  .priority = (osPriority_t) osPriorityAboveNormal,
+};
+/* Definitions for DebugTask */
+osThreadId_t DebugTaskHandle;
+uint32_t DebugTaskBuffer[ 512 ];
+osStaticThreadDef_t DebugTaskControlBlock;
+const osThreadAttr_t DebugTask_attributes = {
+  .name = "DebugTask",
+  .cb_mem = &DebugTaskControlBlock,
+  .cb_size = sizeof(DebugTaskControlBlock),
+  .stack_mem = &DebugTaskBuffer[0],
+  .stack_size = sizeof(DebugTaskBuffer),
   .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for TestQueue */
+osMessageQueueId_t TestQueueHandle;
+uint8_t TestQueueBuffer[ 32 * 256 ];
+osStaticMessageQDef_t TestQueueControlBlock;
+const osMessageQueueAttr_t TestQueue_attributes = {
+  .name = "TestQueue",
+  .cb_mem = &TestQueueControlBlock,
+  .cb_size = sizeof(TestQueueControlBlock),
+  .mq_mem = &TestQueueBuffer,
+  .mq_size = sizeof(TestQueueBuffer)
+};
+/* Definitions for OutboxQueue */
+osMessageQueueId_t OutboxQueueHandle;
+uint8_t OutboxQueueBuffer[ 64 * 32 ];
+osStaticMessageQDef_t OutboxQueueControlBlock;
+const osMessageQueueAttr_t OutboxQueue_attributes = {
+  .name = "OutboxQueue",
+  .cb_mem = &OutboxQueueControlBlock,
+  .cb_size = sizeof(OutboxQueueControlBlock),
+  .mq_mem = &OutboxQueueBuffer,
+  .mq_size = sizeof(OutboxQueueBuffer)
+};
+/* Definitions for DebugQueue */
+osMessageQueueId_t DebugQueueHandle;
+uint8_t DebugQueueBuffer[ 16 * 256 ];
+osStaticMessageQDef_t DebugQueueControlBlock;
+const osMessageQueueAttr_t DebugQueue_attributes = {
+  .name = "DebugQueue",
+  .cb_mem = &DebugQueueControlBlock,
+  .cb_size = sizeof(DebugQueueControlBlock),
+  .mq_mem = &DebugQueueBuffer,
+  .mq_size = sizeof(DebugQueueBuffer)
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -145,6 +215,9 @@ void StartI2CTestTask(void *argument);
 void StartSPITestTask(void *argument);
 void StartTimerTestTask(void *argument);
 void StartADCTestTask(void *argument);
+void StartTransmitterTask(void *argument);
+void StartTestRunnerTask(void *argument);
+void StartDebugTask(void *argument);
 
 extern void MX_LWIP_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -171,6 +244,16 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
+  /* Create the queue(s) */
+  /* creation of TestQueue */
+  TestQueueHandle = osMessageQueueNew (32, 256, &TestQueue_attributes);
+
+  /* creation of OutboxQueue */
+  OutboxQueueHandle = osMessageQueueNew (64, 32, &OutboxQueue_attributes);
+
+  /* creation of DebugQueue */
+  DebugQueueHandle = osMessageQueueNew (16, 256, &DebugQueue_attributes);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -196,6 +279,15 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of ADCTestTask */
   ADCTestTaskHandle = osThreadNew(StartADCTestTask, NULL, &ADCTestTask_attributes);
+
+  /* creation of TransmitterTask */
+  TransmitterTaskHandle = osThreadNew(StartTransmitterTask, NULL, &TransmitterTask_attributes);
+
+  /* creation of TestRunnerTask */
+  TestRunnerTaskHandle = osThreadNew(StartTestRunnerTask, NULL, &TestRunnerTask_attributes);
+
+  /* creation of DebugTask */
+  DebugTaskHandle = osThreadNew(StartDebugTask, NULL, &DebugTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -337,6 +429,67 @@ void StartADCTestTask(void *argument)
 	  test_task_loop(&test_defs[TESTIDX_ADC]);
   }
   /* USER CODE END StartADCTestTask */
+}
+
+/* USER CODE BEGIN Header_StartTransmitterTask */
+/**
+* @brief Function implementing the TransmitterTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTransmitterTask */
+void StartTransmitterTask(void *argument)
+{
+  /* USER CODE BEGIN StartTransmitterTask */
+  vTaskDelay(pdMS_TO_TICKS(200));
+  while (!lwip_initialized) vTaskDelay(pdMS_TO_TICKS(100));
+  transmitter_task_init();
+  /* Infinite loop */
+  for(;;)
+  {
+	  transmitter_task_loop();
+  }
+  /* USER CODE END StartTransmitterTask */
+}
+
+/* USER CODE BEGIN Header_StartTestRunnerTask */
+/**
+* @brief Function implementing the TestRunnerTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTestRunnerTask */
+void StartTestRunnerTask(void *argument)
+{
+  /* USER CODE BEGIN StartTestRunnerTask */
+  vTaskDelay(pdMS_TO_TICKS(200));
+  while (!lwip_initialized) vTaskDelay(pdMS_TO_TICKS(100));
+  test_runner_task_init();
+  /* Infinite loop */
+  for(;;)
+  {
+	  test_runner_task_loop();
+  }
+  /* USER CODE END StartTestRunnerTask */
+}
+
+/* USER CODE BEGIN Header_StartDebugTask */
+/**
+* @brief Function implementing the DebugTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartDebugTask */
+void StartDebugTask(void *argument)
+{
+  /* USER CODE BEGIN StartDebugTask */
+	serial_debug_initialize();
+  /* Infinite loop */
+  for(;;)
+  {
+	  serial_debug_loop();
+  }
+  /* USER CODE END StartDebugTask */
 }
 
 /* Private application code --------------------------------------------------*/
