@@ -17,6 +17,8 @@
 #include <sys/stat.h>
 #include <signal.h>
 
+extern uint16_t next_test_id_client_half;
+
 /**
  * Global flag set by OS termination signals
  * and polled by functions to allow graceful termination.

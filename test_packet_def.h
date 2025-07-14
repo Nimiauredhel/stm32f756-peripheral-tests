@@ -2,6 +2,13 @@
 #define TEST_PACKET_DEF_H
 
 /***
+ * test_packet_def.h
+ * defines common packet structures
+ * shared by devices running a peripheral testing server
+ * and PC clients issuing them test requests.
+ ***/
+
+/***
  * Packet Structures:
  *
  * pairing packet (2 bytes)

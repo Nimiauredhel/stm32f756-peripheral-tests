@@ -1,5 +1,7 @@
 #include "common.h"
 
+uint16_t next_test_id_client_half = 0;
+
 /**
  * Global flag set by OS termination signals
  * and polled by functions to allow graceful termination.
