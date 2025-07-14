@@ -24,19 +24,20 @@ typedef volatile enum PeripheralTestState
 	TESTSTATE_FAILURE = 4,
 } PeripheralTestState_t;
 
-typedef struct TestDefinition
+typedef struct TestData
 {
 	const char name[16];
 	volatile PeripheralTestState_t state;
+	volatile uint8_t iterations;
 	bool (*func)(const char*, const uint8_t);
-} TestDefinition_t;
+} TestData_t;
 
 extern volatile uint8_t test_string_len;
 extern char test_string_buff[TEST_STRING_MAX_LEN];
 extern uint32_t test_string_crc;
 
-extern TestDefinition_t test_defs[NUM_POSSIBLE_TESTS];
+extern TestData_t test_defs[NUM_POSSIBLE_TESTS];
 
-void test_task_loop(TestDefinition_t *def);
+void test_task_loop(TestData_t *def);
 
 #endif /* INC_PERIPHERAL_TESTS_H_ */

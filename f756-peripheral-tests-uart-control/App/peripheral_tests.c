@@ -28,7 +28,7 @@ volatile uint8_t test_string_len = 0;
 char test_string_buff[TEST_STRING_MAX_LEN] = {0};
 uint32_t test_string_crc = 0;
 
-TestDefinition_t test_defs[NUM_POSSIBLE_TESTS] =
+TestData_t test_defs[NUM_POSSIBLE_TESTS] =
 {
 	{ .name = "Timer\0", .state = TESTSTATE_READY, .func = test_timer, },
 	{ .name = "UART\0", .state = TESTSTATE_READY, .func = test_uart, },
@@ -152,7 +152,7 @@ static bool test_adc(const char *test_string, const uint8_t len)
 	return (adc_val >= adc_min_val && adc_val <= adc_max_val);
 }
 
-void test_task_loop(TestDefinition_t *def)
+void test_task_loop(TestData_t *def)
 {
 	for(;;)
 	{
@@ -162,8 +162,17 @@ void test_task_loop(TestDefinition_t *def)
 		{
 			def->state = TESTSTATE_BUSY;
 
-			def->state = def->func(test_string_buff, test_string_len)
-			? TESTSTATE_SUCCESS : TESTSTATE_FAILURE;
+			bool passed = true;
+
+			while(passed == true && def->iterations > 0)
+			{
+				vTaskDelay(pdMS_TO_TICKS(1));
+				passed = def->func(test_string_buff, test_string_len);
+				def->iterations--;
+			}
+
+			def->iterations = 0;
+			def->state = passed ? TESTSTATE_SUCCESS : TESTSTATE_FAILURE;
 		}
 	}
 }

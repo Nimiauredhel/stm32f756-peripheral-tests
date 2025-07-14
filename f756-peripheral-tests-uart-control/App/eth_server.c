@@ -128,6 +128,7 @@ void test_listener_task_loop(void)
 					    sprintf(debug_buff, "%s Test Ordered.", test_defs[i].name);
 					    serial_print_line(debug_buff, 0);
 						ordered_test_count++;
+						test_defs[i].iterations = request_slot.request[TEST_PACKET_ITERATIONS_BYTE_OFFSET];
 						test_defs[i].state = TESTSTATE_PENDING;
 					}
 					else
