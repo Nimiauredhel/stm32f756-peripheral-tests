@@ -50,7 +50,7 @@ static bool lwip_initialized = false;
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
-uint32_t defaultTaskBuffer[ 256 ];
+uint32_t defaultTaskBuffer[ 512 ];
 osStaticThreadDef_t defaultTaskControlBlock;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
@@ -62,7 +62,7 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* Definitions for ListenerTask */
 osThreadId_t ListenerTaskHandle;
-uint32_t ListenerTaskBuffer[ 512 ];
+uint32_t ListenerTaskBuffer[ 1024 ];
 osStaticThreadDef_t ListenerTaskControlBlock;
 const osThreadAttr_t ListenerTask_attributes = {
   .name = "ListenerTask",
@@ -74,7 +74,7 @@ const osThreadAttr_t ListenerTask_attributes = {
 };
 /* Definitions for UARTTestTask */
 osThreadId_t UARTTestTaskHandle;
-uint32_t UARTTestTaskBuffer[ 128 ];
+uint32_t UARTTestTaskBuffer[ 1024 ];
 osStaticThreadDef_t UARTTestTaskControlBlock;
 const osThreadAttr_t UARTTestTask_attributes = {
   .name = "UARTTestTask",
@@ -86,7 +86,7 @@ const osThreadAttr_t UARTTestTask_attributes = {
 };
 /* Definitions for I2CTestTask */
 osThreadId_t I2CTestTaskHandle;
-uint32_t I2CTestTaskBuffer[ 128 ];
+uint32_t I2CTestTaskBuffer[ 1024 ];
 osStaticThreadDef_t I2CTestTaskControlBlock;
 const osThreadAttr_t I2CTestTask_attributes = {
   .name = "I2CTestTask",
@@ -98,7 +98,7 @@ const osThreadAttr_t I2CTestTask_attributes = {
 };
 /* Definitions for SPITestTask */
 osThreadId_t SPITestTaskHandle;
-uint32_t SPITestTaskBuffer[ 128 ];
+uint32_t SPITestTaskBuffer[ 1024 ];
 osStaticThreadDef_t SPITestTaskControlBlock;
 const osThreadAttr_t SPITestTask_attributes = {
   .name = "SPITestTask",
@@ -110,7 +110,7 @@ const osThreadAttr_t SPITestTask_attributes = {
 };
 /* Definitions for TimerTestTask */
 osThreadId_t TimerTestTaskHandle;
-uint32_t TimerTestTaskBuffer[ 128 ];
+uint32_t TimerTestTaskBuffer[ 256 ];
 osStaticThreadDef_t TimerTestTaskControlBlock;
 const osThreadAttr_t TimerTestTask_attributes = {
   .name = "TimerTestTask",
@@ -122,7 +122,7 @@ const osThreadAttr_t TimerTestTask_attributes = {
 };
 /* Definitions for ADCTestTask */
 osThreadId_t ADCTestTaskHandle;
-uint32_t ADCTestTaskBuffer[ 128 ];
+uint32_t ADCTestTaskBuffer[ 256 ];
 osStaticThreadDef_t ADCTestTaskControlBlock;
 const osThreadAttr_t ADCTestTask_attributes = {
   .name = "ADCTestTask",

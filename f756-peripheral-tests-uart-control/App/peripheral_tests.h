@@ -33,6 +33,7 @@ typedef struct TestDefinition
 
 extern volatile uint8_t test_string_len;
 extern char test_string_buff[TEST_STRING_MAX_LEN];
+extern uint32_t test_string_crc;
 
 extern TestDefinition_t test_defs[NUM_POSSIBLE_TESTS];
 

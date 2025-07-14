@@ -5,13 +5,13 @@
  *      Author: mickey
  */
 
-
 #include "eth_server.h"
 #include "lwip.h"
 #include "lwip/api.h"
 #include "lwip/ip_addr.h"
 
 extern struct netif gnetif;
+extern CRC_HandleTypeDef hcrc;
 
 typedef struct TestClientSlot
 {
@@ -110,6 +110,7 @@ void test_listener_task_loop(void)
 				test_string_len = client_slot.request[TEST_PACKET_STRING_LEN_OFFSET];
 				explicit_bzero(test_string_buff, sizeof(test_string_buff));
 				strncpy(test_string_buff, (char *)(client_slot.request+TEST_PACKET_STRING_HEAD_OFFSET), test_string_len);
+				test_string_crc = HAL_CRC_Calculate(&hcrc, test_string_buff, test_string_len);
 
 				uint8_t test_selection_byte = client_slot.request[TEST_PACKET_SELECTION_BYTE_OFFSET];
 				uint8_t ordered_test_count = 0;

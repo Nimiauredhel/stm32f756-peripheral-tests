@@ -4,6 +4,7 @@
  *  Created on: Jul 7, 2025
  *      Author: mickey
  */
+#include "main.h"
 #include "peripheral_tests.h"
 #include <math.h>
 
@@ -21,9 +22,11 @@ extern SPI_HandleTypeDef hspi5;
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
 extern ADC_HandleTypeDef hadc1;
+extern CRC_HandleTypeDef hcrc;
 
 volatile uint8_t test_string_len = 0;
 char test_string_buff[TEST_STRING_MAX_LEN] = {0};
+uint32_t test_string_crc = 0;
 
 TestDefinition_t test_defs[NUM_POSSIBLE_TESTS] =
 {
@@ -76,13 +79,15 @@ static bool test_uart(const char *test_string, const uint8_t len)
 	HAL_UART_Transmit(&huart2, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
 	vTaskDelay(TEST_GAP_TICKS);
 
-	if (0 != strcmp(test_string, uart_test_rx_buff_1)) return false;
+	if (HAL_CRC_Calculate(&hcrc, uart_test_rx_buff_1, len)
+		!= test_string_crc) return false;
 
 	HAL_UART_Receive_DMA(&huart2, (uint8_t *)uart_test_rx_buff_2, len);
 	HAL_UART_Transmit(&huart6, (uint8_t *)uart_test_rx_buff_1, len, TEST_TIMEOUT_TICKS);
 	vTaskDelay(TEST_GAP_TICKS);
 
-	return (0 == strcmp(test_string, uart_test_rx_buff_2));
+	return (HAL_CRC_Calculate(&hcrc, uart_test_rx_buff_2, len)
+			== test_string_crc);
 }
 
 static bool test_spi(const char *test_string, const uint8_t len)
@@ -99,13 +104,15 @@ static bool test_spi(const char *test_string, const uint8_t len)
 	HAL_SPI_Transmit(&hspi3, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
 	vTaskDelay(TEST_GAP_TICKS);
 
-	if (0 != strcmp(test_string, spi_rx_buff_1)) return false;
+	if (HAL_CRC_Calculate(&hcrc, spi_rx_buff_1, len)
+			!= test_string_crc) return false;
 
 	HAL_SPI_TransmitReceive_DMA(&hspi5, (uint8_t *)spi_rx_buff_1, (uint8_t *)spi_rx_buff_dummy, len);
 	HAL_SPI_TransmitReceive(&hspi3, (uint8_t *)spi_tx_buff_dummy, (uint8_t *)spi_rx_buff_2, len, TEST_TIMEOUT_TICKS);
 	vTaskDelay(TEST_GAP_TICKS);
 
-	return (0 == strcmp(test_string, spi_rx_buff_2));
+	return (HAL_CRC_Calculate(&hcrc, spi_rx_buff_2, len)
+				== test_string_crc);
 }
 
 static bool test_i2c(const char *test_string, const uint8_t len)
@@ -120,13 +127,15 @@ static bool test_i2c(const char *test_string, const uint8_t len)
 	HAL_I2C_Master_Transmit(&hi2c2, hi2c1.Init.OwnAddress1, (uint8_t *)test_string, len, TEST_TIMEOUT_TICKS);
 	vTaskDelay(TEST_GAP_TICKS);
 
-	if (0 != strcmp(test_string, i2c_rx_buff_1)) return false;
+	if (HAL_CRC_Calculate(&hcrc, i2c_rx_buff_1, len)
+				!= test_string_crc) return false;
 
 	HAL_I2C_Slave_Transmit_DMA(&hi2c1, (uint8_t *)i2c_rx_buff_1, len);
 	HAL_I2C_Master_Receive(&hi2c2, hi2c1.Init.OwnAddress1, (uint8_t *)i2c_rx_buff_2, len, TEST_TIMEOUT_TICKS);
 	vTaskDelay(TEST_GAP_TICKS);
 
-	return (0 == strcmp(test_string, i2c_rx_buff_2));
+	return (HAL_CRC_Calculate(&hcrc, i2c_rx_buff_2, len)
+					== test_string_crc);
 }
 
 static bool test_adc(const char *test_string, const uint8_t len)

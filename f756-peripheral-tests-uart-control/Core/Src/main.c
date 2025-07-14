@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "adc.h"
+#include "crc.h"
 #include "dma.h"
 #include "i2c.h"
 #include "lwip.h"
@@ -105,6 +106,7 @@ int main(void)
   MX_SPI3_Init();
   MX_TIM1_Init();
   MX_ADC1_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
   serial_uart_initialize();
   /* USER CODE END 2 */
