@@ -13,23 +13,25 @@
 extern struct netif gnetif;
 extern CRC_HandleTypeDef hcrc;
 
-typedef struct TestClientSlot
+typedef struct TestRequestSlot
 {
 	bool used;
-	ip_addr_t addr;
-	u16_t port;
-	uint8_t request[TEST_PACKET_MAX_SIZE_BYTES];
-} TestClientSlot_t;
+	ip_addr_t client_addr;
+	u16_t client_port;
+	uint8_t request[TEST_REQUEST_PACKET_MAX_SIZE_BYTES];
+} TestRequestSlot_t;
+
+static uint16_t next_test_id_server_half = 0;
 
 static struct netconn *listener_conn = NULL;
 
-static TestClientSlot_t client_slot = {0};
+static TestRequestSlot_t request_slot = {0};
 
 void test_listener_task_init(void)
 {
 	serial_print_line("\r\nEthernet Listener Task started.", 0);
 
-	explicit_bzero(&client_slot, sizeof(client_slot));
+	explicit_bzero(&request_slot, sizeof(request_slot));
 
 	listener_conn = netconn_new(NETCONN_UDP);
 
@@ -68,7 +70,7 @@ void test_listener_task_loop(void)
 
 	static char debug_buff[256] = {0};
 
-	static uint8_t response_packet[TEST_PACKET_EMPTY_SIZE_BYTES];
+	static uint8_t response_packet[TEST_MSG_PACKET_SIZE_BYTES];
 
 	serial_print("Awaiting Test Requests.", 0);
 
@@ -80,39 +82,42 @@ void test_listener_task_loop(void)
 			netbuf_data(listener_netbuf, (void **)&listener_pbuf, &listener_pbuf_len);
 
 			if (listener_pbuf[0] == TEST_PACKET_START_BYTE_VALUE
-				&& (TestPacketMsg_t)listener_pbuf[TEST_PACKET_MSG_BYTE_OFFSET] == TESTMSG_NEWTEST)
+				&& (TestPacketMsg_t)listener_pbuf[TEST_PACKET_MSG_BYTE_OFFSET] == TESTMSG_TEST_NEW_REQUEST)
 			{
 				// save client data to slot
-				client_slot.used = true;
-				client_slot.addr = listener_netbuf->addr;
-				client_slot.port = listener_netbuf->port;
-				memcpy(client_slot.request, listener_pbuf, listener_pbuf_len);
+				request_slot.used = true;
+				request_slot.client_addr = listener_netbuf->addr;
+				request_slot.client_port = listener_netbuf->port;
+				memcpy(request_slot.request, listener_pbuf, listener_pbuf_len);
 				netbuf_delete(listener_netbuf);
 
-				snprintf(debug_buff, sizeof(debug_buff), "\r\nDevice received test string: %s", client_slot.request+TEST_PACKET_STRING_HEAD_OFFSET);
+				request_slot.request[TEST_PACKET_ID_BYTE_OFFSET] |= (uint32_t)next_test_id_server_half;
+				next_test_id_server_half = (next_test_id_server_half == UINT16_MAX) ? 0 : next_test_id_server_half + 1;
+
+				snprintf(debug_buff, sizeof(debug_buff), "\r\nDevice received test string: %s", request_slot.request+TEST_PACKET_STRING_HEAD_OFFSET);
 				serial_print_line(debug_buff, 0);
 
 				// confirm reception
-				bzero(response_packet, TEST_PACKET_EMPTY_SIZE_BYTES);
+				bzero(response_packet, TEST_MSG_PACKET_SIZE_BYTES);
 				response_packet[0] = TEST_PACKET_START_BYTE_VALUE;
 				*(uint32_t *)(response_packet+TEST_PACKET_ID_BYTE_OFFSET)
-				= *(uint32_t *)(client_slot.request+TEST_PACKET_ID_BYTE_OFFSET);
-				response_packet[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_ACK;
+				= *(uint32_t *)(request_slot.request+TEST_PACKET_ID_BYTE_OFFSET);
+				response_packet[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_TEST_NEW_ACK;
 				response_packet[TEST_PACKET_STRING_HEAD_OFFSET] = TEST_PACKET_END_BYTE_VALUE;
 
 				struct netbuf *response_netbuf = netbuf_new();
-				void *response_pbuf = netbuf_alloc(response_netbuf, TEST_PACKET_EMPTY_SIZE_BYTES);
-				memcpy(response_pbuf, response_packet, TEST_PACKET_EMPTY_SIZE_BYTES);
-				netconn_sendto(listener_conn, response_netbuf, &client_slot.addr, client_slot.port);
+				void *response_pbuf = netbuf_alloc(response_netbuf, TEST_MSG_PACKET_SIZE_BYTES);
+				memcpy(response_pbuf, response_packet, TEST_MSG_PACKET_SIZE_BYTES);
+				netconn_sendto(listener_conn, response_netbuf, &request_slot.client_addr, request_slot.client_port);
 				netbuf_delete(response_netbuf);
 
 				// prepare test reference
-				test_string_len = client_slot.request[TEST_PACKET_STRING_LEN_OFFSET];
+				test_string_len = request_slot.request[TEST_PACKET_STRING_LEN_OFFSET];
 				explicit_bzero(test_string_buff, sizeof(test_string_buff));
-				strncpy(test_string_buff, (char *)(client_slot.request+TEST_PACKET_STRING_HEAD_OFFSET), test_string_len);
+				strncpy(test_string_buff, (char *)(request_slot.request+TEST_PACKET_STRING_HEAD_OFFSET), test_string_len);
 				test_string_crc = HAL_CRC_Calculate(&hcrc, test_string_buff, test_string_len);
 
-				uint8_t test_selection_byte = client_slot.request[TEST_PACKET_SELECTION_BYTE_OFFSET];
+				uint8_t test_selection_byte = request_slot.request[TEST_PACKET_SELECTION_BYTE_OFFSET];
 				uint8_t ordered_test_count = 0;
 				uint8_t completed_tests = 0;
 
@@ -132,7 +137,7 @@ void test_listener_task_loop(void)
 				}
 
 				// prepare results packet
-				response_packet[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_RESULT;
+				response_packet[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_TEST_OVER_RESULTS;
 				response_packet[TEST_PACKET_SELECTION_BYTE_OFFSET] = 0x00;
 
 				serial_print_line("Awaiting test completion.", 0);
@@ -168,9 +173,9 @@ void test_listener_task_loop(void)
 				serial_print_line("Tests concluded.", 0);
 
 				response_netbuf = netbuf_new();
-				response_pbuf = netbuf_alloc(response_netbuf, TEST_PACKET_EMPTY_SIZE_BYTES);
-				memcpy(response_pbuf, response_packet, TEST_PACKET_EMPTY_SIZE_BYTES);
-				netconn_sendto(listener_conn, response_netbuf, &client_slot.addr, client_slot.port);
+				response_pbuf = netbuf_alloc(response_netbuf, TEST_MSG_PACKET_SIZE_BYTES);
+				memcpy(response_pbuf, response_packet, TEST_MSG_PACKET_SIZE_BYTES);
+				netconn_sendto(listener_conn, response_netbuf, &request_slot.client_addr, request_slot.client_port);
 				netbuf_delete(response_netbuf);
 				serial_print_line("Results sent.", 0);
 				serial_print("Awaiting Test Requests.", 0);
