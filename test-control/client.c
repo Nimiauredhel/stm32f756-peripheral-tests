@@ -7,14 +7,14 @@ static int sockfd = 0;
 static struct sockaddr_in server_rx_addr;
 static socklen_t server_rx_addr_len = sizeof(server_rx_addr);
 
-static uint8_t client_tx_buffer[TEST_REQUEST_PACKET_MAX_SIZE_BYTES] = {0};
-static uint8_t client_rx_buffer[TEST_MSG_PACKET_SIZE_BYTES] = {0};
+static uint8_t client_tx_buffer[TEST_REQUEST_PACKET_MAX_SIZE_BYTES+1] = {0};
+static uint8_t client_rx_buffer[TEST_REQUEST_PACKET_MIN_SIZE_BYTES+1] = {0};
 
 static bool is_paired = false;
 
 static bool client_send_packet(uint8_t *buffer, size_t length)
 {
-    int sent_bytes = sendto(sockfd, buffer, length, 0, (struct sockaddr*)&server_rx_addr, server_rx_addr_len);
+    ssize_t sent_bytes = sendto(sockfd, buffer, length, 0, (struct sockaddr*)&server_rx_addr, server_rx_addr_len);
 
     if (sent_bytes <= 0)
     {
@@ -53,7 +53,7 @@ void client_try_pairing(void)
 
     while (!should_terminate && !is_paired)
     {
-        size_t received_bytes = recvfrom(sockfd, client_rx_buffer, sizeof(client_rx_buffer), 0, (struct sockaddr*)&new_server_addr, &new_server_addr_len);
+        ssize_t received_bytes = recvfrom(sockfd, client_rx_buffer, sizeof(client_rx_buffer)-1, 0, (struct sockaddr*)&new_server_addr, &new_server_addr_len);
 
         printf("Received packet of size %ld.\n", received_bytes);
 
@@ -113,7 +113,7 @@ void client_await_response(uint8_t test_selection_byte)
 
     while (!should_terminate && !results_received)
     {
-        size_t received_bytes = recvfrom(sockfd, client_rx_buffer, sizeof(client_rx_buffer), 0, (struct sockaddr*)&server_tx_addr, &server_tx_addr_len);
+        ssize_t received_bytes = recvfrom(sockfd, client_rx_buffer, sizeof(client_rx_buffer)-1, 0, (struct sockaddr*)&server_tx_addr, &server_tx_addr_len);
 
         if (received_bytes <= 0)
         {
@@ -238,7 +238,7 @@ void client_fill_test_message_packet(TestPacketMsg_t msg, uint32_t test_id)
 
 void client_fill_test_request_packet(TestPacketMsg_t msg, uint32_t test_id, uint8_t test_selection, uint8_t iterations, uint8_t str_len, char *str_ptr)
 {
-    explicit_bzero(client_tx_buffer, TEST_REQUEST_PACKET_MAX_SIZE_BYTES + str_len);
+    explicit_bzero(client_tx_buffer, TEST_REQUEST_PACKET_MAX_SIZE_BYTES);
     client_tx_buffer[0] = TEST_PACKET_START_BYTE_VALUE;
     client_tx_buffer[TEST_PACKET_MSG_BYTE_OFFSET] = msg;
     *(uint32_t *)(client_tx_buffer+TEST_PACKET_ID_BYTE_OFFSET) = test_id;

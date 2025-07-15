@@ -7,18 +7,6 @@ char test_names[NUM_POSSIBLE_TESTS][8] =
 
 void interface_init(void)
 {
-    /*
-    char server_ip_str[24] = {0};
-    printf("Please input server IP.\n");
-    fgets(server_ip_str, sizeof(server_ip_str), stdin);
-
-    if (strlen(server_ip_str) < 7)
-    {
-        printf("Defaulting to localhost.\n");
-        sprintf(server_ip_str, "127.0.0.1");
-    }
-    */
-
     client_init();
 }
 
