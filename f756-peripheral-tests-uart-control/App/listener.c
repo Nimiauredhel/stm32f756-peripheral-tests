@@ -134,8 +134,7 @@ void test_listener_task_loop(void)
 			recv_idle_counter_ms = 0;
 			netbuf_data(listener_netbuf, (void **)&listener_pbuf, &listener_pbuf_len);
 
-			if (listener_pbuf[0] == TEST_PACKET_START_BYTE_VALUE
-				&& (TestPacketMsg_t)listener_pbuf[TEST_PACKET_MSG_BYTE_OFFSET] == TESTMSG_TEST_NEW_REQUEST)
+			if (listener_pbuf[0] == TEST_PACKET_START_BYTE_VALUE)
 			{
 				switch((TestPacketMsg_t)listener_pbuf[TEST_PACKET_MSG_BYTE_OFFSET])
 				{
@@ -171,10 +170,9 @@ void test_listener_task_loop(void)
 				case TESTMSG_PAIRING_PROBE:
 					serial_debug_enqueue("Received a client probe packet.");
 					// send out a beacon
-					uint32_t broadcast = (~gnetif.netmask.addr)|gnetif.ip_addr.addr;
 					bzero(&message_scratch, sizeof(message_scratch));
-					message_scratch.port = SERVER_PORT;
-					message_scratch.addr.addr = broadcast;
+					message_scratch.port = CLIENT_PORT;
+					message_scratch.addr = *IP4_ADDR_BROADCAST;
 					message_scratch.message[0] = TEST_PACKET_START_BYTE_VALUE;
 					message_scratch.message[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_PAIRING_BEACON;
 					message_scratch.message[TEST_PACKET_ID_BYTE_OFFSET] = TEST_PACKET_END_BYTE_VALUE;
@@ -185,6 +183,10 @@ void test_listener_task_loop(void)
 					break;
 				}
 		    }
+			else
+			{
+				serial_debug_enqueue("Received invalid packet.");
+			}
 
 			serial_debug_enqueue("Listener awaiting requests.");
 			break;

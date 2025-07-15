@@ -8,8 +8,6 @@
 #ifndef LISTENER_H_
 #define LISTENER_H_
 
-#define SERVER_PORT (45678)
-
 #include "main.h"
 #include "test_packet_def.h"
 #include "peripheral_tests.h"

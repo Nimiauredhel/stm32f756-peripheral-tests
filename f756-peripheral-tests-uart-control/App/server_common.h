@@ -20,6 +20,9 @@
 #include "lwip/ip_addr.h"
 #include "test_packet_def.h"
 
+#define CLIENT_PORT (34567)
+#define SERVER_PORT (45678)
+
 typedef struct TestRequest
 {
 	ip_addr_t client_addr;
