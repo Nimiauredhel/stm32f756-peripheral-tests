@@ -3,15 +3,15 @@
 #define SERVER_PORT (45678)
 
 static int sockfd = 0;
-static struct sockaddr_in server_addr;
-static socklen_t server_addr_len = sizeof(server_addr);
+static struct sockaddr_in server_rx_addr;
+static socklen_t server_rx_addr_len = sizeof(server_rx_addr);
 
 static uint8_t client_tx_buffer[TEST_REQUEST_PACKET_MAX_SIZE_BYTES] = {0};
 static uint8_t client_rx_buffer[TEST_MSG_PACKET_SIZE_BYTES] = {0};
 
 static bool client_send_packet(uint8_t *buffer, size_t length)
 {
-    int sent_bytes = sendto(sockfd, buffer, length, 0, (struct sockaddr*)&server_addr, server_addr_len);
+    int sent_bytes = sendto(sockfd, buffer, length, 0, (struct sockaddr*)&server_rx_addr, server_rx_addr_len);
 
     if (sent_bytes <= 0)
     {
@@ -41,11 +41,13 @@ bool client_send_test_request_packet(void)
 
 void client_await_response(uint8_t test_selection_byte)
 {
+    struct sockaddr_in server_tx_addr = server_rx_addr;
+    socklen_t server_tx_addr_len = sizeof(server_tx_addr);
     bool results_received = false;
 
     while (!should_terminate && !results_received)
     {
-        size_t received_bytes = recvfrom(sockfd, client_rx_buffer, sizeof(client_rx_buffer), 0, (struct sockaddr*)&server_addr, &server_addr_len);
+        size_t received_bytes = recvfrom(sockfd, client_rx_buffer, sizeof(client_rx_buffer), 0, (struct sockaddr*)&server_tx_addr, &server_tx_addr_len);
 
         if (received_bytes <= 0)
         {
@@ -104,11 +106,11 @@ void client_await_response(uint8_t test_selection_byte)
 
 void client_init(char *server_ip_str)
 {
-    bzero(&server_addr, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(SERVER_PORT);
+    bzero(&server_rx_addr, sizeof(server_rx_addr));
+    server_rx_addr.sin_family = AF_INET;
+    server_rx_addr.sin_port = htons(SERVER_PORT);
 
-    if (0 == inet_aton(server_ip_str, &server_addr.sin_addr))
+    if (0 == inet_aton(server_ip_str, &server_rx_addr.sin_addr))
     {
         printf("Failed parsing IP.\n");
         exit(EXIT_FAILURE);
@@ -136,7 +138,7 @@ void client_fill_pairing_packet(TestPacketMsg_t msg)
 
 void client_fill_test_message_packet(TestPacketMsg_t msg, uint32_t test_id)
 {
-    explicit_bzero(client_tx_buffer, TEST_MSG_PACKET_SIZE_BYTES);
+    explicit_bzero(client_tx_buffer, TEST_REQUEST_PACKET_MAX_SIZE_BYTES);
     client_tx_buffer[0] = TEST_PACKET_START_BYTE_VALUE;
     client_tx_buffer[TEST_PACKET_MSG_BYTE_OFFSET] = msg;
     *(uint32_t *)(client_tx_buffer+TEST_PACKET_ID_BYTE_OFFSET) = test_id;
@@ -146,7 +148,7 @@ void client_fill_test_message_packet(TestPacketMsg_t msg, uint32_t test_id)
 
 void client_fill_test_request_packet(TestPacketMsg_t msg, uint32_t test_id, uint8_t test_selection, uint8_t iterations, uint8_t str_len, char *str_ptr)
 {
-    explicit_bzero(client_tx_buffer, TEST_REQUEST_PACKET_MIN_SIZE_BYTES + str_len);
+    explicit_bzero(client_tx_buffer, TEST_REQUEST_PACKET_MAX_SIZE_BYTES + str_len);
     client_tx_buffer[0] = TEST_PACKET_START_BYTE_VALUE;
     client_tx_buffer[TEST_PACKET_MSG_BYTE_OFFSET] = msg;
     *(uint32_t *)(client_tx_buffer+TEST_PACKET_ID_BYTE_OFFSET) = test_id;
