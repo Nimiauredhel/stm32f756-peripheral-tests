@@ -171,7 +171,7 @@ const osThreadAttr_t DebugTask_attributes = {
 };
 /* Definitions for TestQueue */
 osMessageQueueId_t TestQueueHandle;
-uint8_t TestQueueBuffer[ 32 * 256 ];
+uint8_t TestQueueBuffer[ 16 * 256 ];
 osStaticMessageQDef_t TestQueueControlBlock;
 const osMessageQueueAttr_t TestQueue_attributes = {
   .name = "TestQueue",
@@ -182,7 +182,7 @@ const osMessageQueueAttr_t TestQueue_attributes = {
 };
 /* Definitions for OutboxQueue */
 osMessageQueueId_t OutboxQueueHandle;
-uint8_t OutboxQueueBuffer[ 64 * 32 ];
+uint8_t OutboxQueueBuffer[ 32 * 32 ];
 osStaticMessageQDef_t OutboxQueueControlBlock;
 const osMessageQueueAttr_t OutboxQueue_attributes = {
   .name = "OutboxQueue",
@@ -193,7 +193,7 @@ const osMessageQueueAttr_t OutboxQueue_attributes = {
 };
 /* Definitions for DebugQueue */
 osMessageQueueId_t DebugQueueHandle;
-uint8_t DebugQueueBuffer[ 16 * 256 ];
+uint8_t DebugQueueBuffer[ 64 * 160 ];
 osStaticMessageQDef_t DebugQueueControlBlock;
 const osMessageQueueAttr_t DebugQueue_attributes = {
   .name = "DebugQueue",
@@ -246,13 +246,13 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* creation of TestQueue */
-  TestQueueHandle = osMessageQueueNew (32, 256, &TestQueue_attributes);
+  TestQueueHandle = osMessageQueueNew (16, 256, &TestQueue_attributes);
 
   /* creation of OutboxQueue */
-  OutboxQueueHandle = osMessageQueueNew (64, 32, &OutboxQueue_attributes);
+  OutboxQueueHandle = osMessageQueueNew (32, 32, &OutboxQueue_attributes);
 
   /* creation of DebugQueue */
-  DebugQueueHandle = osMessageQueueNew (16, 256, &DebugQueue_attributes);
+  DebugQueueHandle = osMessageQueueNew (64, 160, &DebugQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */

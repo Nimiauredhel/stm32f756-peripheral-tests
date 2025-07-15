@@ -43,7 +43,7 @@
 #define ETHIF_TX_TIMEOUT (2000U)
 /* USER CODE BEGIN OS_THREAD_STACK_SIZE_WITH_RTOS */
 /* Stack size of the interface thread */
-#define INTERFACE_THREAD_STACK_SIZE ( 2048 )
+#define INTERFACE_THREAD_STACK_SIZE ( 1024 )
 /* USER CODE END OS_THREAD_STACK_SIZE_WITH_RTOS */
 /* Network interface name */
 #define IFNAME0 's'
@@ -94,7 +94,7 @@ typedef struct
 } RxBuff_t;
 
 /* Memory Pool Declaration */
-#define ETH_RX_BUFFER_CNT             12U
+#define ETH_RX_BUFFER_CNT             16U
 LWIP_MEMPOOL_DECLARE(RX_POOL, ETH_RX_BUFFER_CNT, sizeof(RxBuff_t), "Zero-copy RX PBUF pool");
 
 /* Variable Definitions */

@@ -29,7 +29,7 @@
 #include <string.h>
 
 /* USER CODE BEGIN 0 */
-uint8_t eth_link_status_idx = 0;
+static volatile uint8_t eth_link_status_idx = 0;
 static uint8_t eth_last_link_up_idx = 0;
 static char debug_buff[SERIAL_DEBUG_MAX_LEN] = {0};
 /* USER CODE END 0 */
@@ -48,12 +48,15 @@ ip4_addr_t ipaddr;
 ip4_addr_t netmask;
 ip4_addr_t gw;
 /* USER CODE BEGIN OS_THREAD_ATTR_CMSIS_RTOS_V2 */
-#define INTERFACE_THREAD_STACK_SIZE ( 1024 )
+#define INTERFACE_THREAD_STACK_SIZE ( 2048 )
 osThreadAttr_t attributes;
 /* USER CODE END OS_THREAD_ATTR_CMSIS_RTOS_V2 */
 
 /* USER CODE BEGIN 2 */
-
+uint8_t lwip_get_eth_link_status_idx(void)
+{
+	return eth_link_status_idx;
+}
 /* USER CODE END 2 */
 
 /**

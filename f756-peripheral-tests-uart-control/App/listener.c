@@ -18,7 +18,7 @@ static const uint16_t recv_idle_debug_ms = 30000;
 static uint32_t recv_idle_counter_ms = 0;
 
 static struct netconn *listener_conn = NULL;
-static ip4_addr_t bound_address = {0};
+static ip4_addr_t listener_address = {0};
 static uint8_t last_link_up_idx = 0;
 
 static uint16_t next_test_id_server_half = 0;
@@ -29,20 +29,25 @@ static char debug_buff[SERIAL_DEBUG_MAX_LEN] = {0};
 
 static bool eth_link_was_down(void)
 {
+	uint8_t eth_link_status_idx = lwip_get_eth_link_status_idx();
+
 	return (eth_link_status_idx != last_link_up_idx
 			|| eth_link_status_idx == 0);
 }
 
 static void await_eth_link(void)
 {
+	uint8_t eth_link_status_idx = lwip_get_eth_link_status_idx();
+
 	if (eth_link_status_idx == 0)
 	{
 		serial_debug_enqueue("Waiting for ethernet link.");
 
-		while (eth_link_status_idx == 0)
+		do
 		{
 			vTaskDelay(pdMS_TO_TICKS(500));
-		}
+			eth_link_status_idx = lwip_get_eth_link_status_idx();
+		} while (eth_link_status_idx == 0);
 	}
 
 	last_link_up_idx = eth_link_status_idx;
@@ -66,7 +71,7 @@ static void bind_listener(void)
 	snprintf(debug_buff, sizeof(debug_buff), "IP acquired: %s", ip4addr_ntoa(&given_address));
 	serial_debug_enqueue(debug_buff);
 
-	if (bound_address.addr == given_address.addr)
+	if (listener_address.addr == given_address.addr)
 	{
 		serial_debug_enqueue("Given IP already bound.");
 		return;
@@ -84,7 +89,7 @@ static void bind_listener(void)
 	}
 	else
 	{
-		bound_address = given_address;
+		listener_address = given_address;
 		snprintf(debug_buff, sizeof(debug_buff), "Listener bound to IP %s and port %u.", ip4addr_ntoa(&given_address), SERVER_PORT);
 		serial_debug_enqueue(debug_buff);
 	}
@@ -119,6 +124,11 @@ void test_listener_task_loop(void)
 	/* Infinite loop */
 	for(;;)
 	{
+		if (listener_netbuf != NULL)
+		{
+			netbuf_delete(listener_netbuf);
+		}
+
 		if (eth_link_was_down())
 		{
 			await_eth_link();
@@ -140,7 +150,7 @@ void test_listener_task_loop(void)
 				{
 				case TESTMSG_TEST_NEW_REQUEST:
 					// save request to scratch buffer
-					bzero(&request_scratch, sizeof(request_scratch));
+					explicit_bzero(&request_scratch, sizeof(request_scratch));
 					request_scratch.client_addr = listener_netbuf->addr;
 					request_scratch.client_port = listener_netbuf->port;
 					memcpy(request_scratch.request, listener_pbuf, listener_pbuf_len);
@@ -156,7 +166,7 @@ void test_listener_task_loop(void)
 					bool forwarded = (osOK == osMessageQueuePut(TestQueueHandle, &request_scratch, 0, pdMS_TO_TICKS(1000)));
 
 					// confirm reception
-					bzero(&message_scratch, sizeof(message_scratch));
+					explicit_bzero(&message_scratch, sizeof(message_scratch));
 					message_scratch.addr = request_scratch.client_addr;
 					message_scratch.port = request_scratch.client_port;
 					message_scratch.message[0] = TEST_PACKET_START_BYTE_VALUE;
@@ -170,7 +180,7 @@ void test_listener_task_loop(void)
 				case TESTMSG_PAIRING_PROBE:
 					serial_debug_enqueue("Received a client probe packet.");
 					// send out a beacon
-					bzero(&message_scratch, sizeof(message_scratch));
+					explicit_bzero(&message_scratch, sizeof(message_scratch));
 					message_scratch.port = CLIENT_PORT;
 					message_scratch.addr = *IP4_ADDR_BROADCAST;
 					message_scratch.message[0] = TEST_PACKET_START_BYTE_VALUE;
