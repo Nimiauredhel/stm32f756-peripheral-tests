@@ -40,8 +40,6 @@ static bool client_send_pairing_packet(void)
 
 void client_try_pairing(void)
 {
-    static const uint8_t resend_threshold = 10;
-
     static struct sockaddr_in new_server_addr = {0};
     static socklen_t new_server_addr_len = sizeof(new_server_addr);
 
@@ -51,23 +49,22 @@ void client_try_pairing(void)
 
     printf("Awaiting a server beacon.\n");
 
-    uint8_t wrong_packet_counter = 0;
     client_send_pairing_packet();
 
     while (!should_terminate && !is_paired)
     {
-        if (wrong_packet_counter >= resend_threshold)
-        {
-            wrong_packet_counter = 0;
-            client_send_pairing_packet();
-        }
-
         size_t received_bytes = recvfrom(sockfd, client_rx_buffer, sizeof(client_rx_buffer), 0, (struct sockaddr*)&new_server_addr, &new_server_addr_len);
 
         printf("Received packet of size %ld.\n", received_bytes);
 
         if (received_bytes <= 0)
         {
+            int err = errno;
+            if (err == ETIMEDOUT)
+            {
+                client_send_pairing_packet();
+                continue;
+            }
             perror("Receiving failed");
         }
         else if(new_server_addr.sin_port == CLIENT_PORT)
@@ -87,7 +84,6 @@ void client_try_pairing(void)
         }
         else
         {
-            wrong_packet_counter++;
             printf("Received unexpected packet.\n");
             break;
         }
@@ -121,6 +117,8 @@ void client_await_response(uint8_t test_selection_byte)
 
         if (received_bytes <= 0)
         {
+            int err = errno;
+            if (err == ETIMEDOUT) continue;
             perror("Receiving failed");
         }
         else if (client_rx_buffer[0] == TEST_PACKET_START_BYTE_VALUE)
@@ -176,19 +174,12 @@ void client_await_response(uint8_t test_selection_byte)
 
 void client_init(void)
 {
-    static const int one = 1;
-
-    /*
-    bzero(&server_rx_addr, sizeof(server_rx_addr));
-    server_rx_addr.sin_family = AF_INET;
-    server_rx_addr.sin_port = htons(SERVER_PORT);
-
-    if (0 == inet_aton(server_ip_str, &server_rx_addr.sin_addr))
+    static const struct timeval timeout =
     {
-        printf("Failed parsing IP.\n");
-        exit(EXIT_FAILURE);
-    }
-    */
+        .tv_sec = 4,
+        .tv_usec = 0,
+    };
+    static const int one = 1;
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
     {
@@ -206,7 +197,13 @@ void client_init(void)
         close(sockfd);
         exit(EXIT_FAILURE);
     }
-
+    
+    if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout) < 0)
+    {
+        perror("Setting socket timeout failed");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
 
     if(setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one)) < 0)
     {
