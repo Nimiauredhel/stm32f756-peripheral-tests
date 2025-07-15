@@ -18,6 +18,9 @@
 
 #include "main.h"
 
+#define SERIAL_DEBUG_ENABLED (1)
+#define SERIAL_DEBUG_MAX_LEN 255
+
 void serial_debug_initialize();
 void serial_debug_loop();
 void serial_debug_enqueue(const char *msg);

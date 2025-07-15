@@ -483,6 +483,10 @@ void StartTestRunnerTask(void *argument)
 void StartDebugTask(void *argument)
 {
   /* USER CODE BEGIN StartDebugTask */
+	if (!SERIAL_DEBUG_ENABLED)
+	{
+		osThreadExit();
+	}
 	serial_debug_initialize();
   /* Infinite loop */
   for(;;)

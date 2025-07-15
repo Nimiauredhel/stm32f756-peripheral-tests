@@ -41,7 +41,7 @@
 #endif /* WITH_RTOS */
 
 /* USER CODE BEGIN 0 */
-
+extern uint8_t eth_link_status_idx;
 /* USER CODE END 0 */
 
 /* Global Variables ----------------------------------------------------------*/

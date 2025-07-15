@@ -29,7 +29,9 @@
 #include <string.h>
 
 /* USER CODE BEGIN 0 */
-
+uint8_t eth_link_status_idx = 0;
+static uint8_t eth_last_link_up_idx = 0;
+static char debug_buff[SERIAL_DEBUG_MAX_LEN] = {0};
 /* USER CODE END 0 */
 /* Private function prototypes -----------------------------------------------*/
 static void ethernet_link_status_updated(struct netif *netif);
@@ -113,11 +115,20 @@ static void ethernet_link_status_updated(struct netif *netif)
   if (netif_is_up(netif))
   {
 /* USER CODE BEGIN 5 */
+	  uint8_t new_idx = eth_last_link_up_idx == UINT8_MAX ?
+			  1 : eth_last_link_up_idx + 1;
+	  eth_last_link_up_idx = new_idx;
+	  eth_link_status_idx = new_idx;
+	  snprintf(debug_buff, sizeof(debug_buff), "Ethernet link is up (index %u).", new_idx);
+	  serial_debug_enqueue(debug_buff);
 /* USER CODE END 5 */
   }
   else /* netif is down */
   {
 /* USER CODE BEGIN 6 */
+	  eth_link_status_idx = 0;
+	  snprintf(debug_buff, sizeof(debug_buff), "Ethernet link is down (index %u).", eth_last_link_up_idx);
+	  serial_debug_enqueue(debug_buff);
 /* USER CODE END 6 */
   }
 }
