@@ -11,9 +11,9 @@
 /***
  * Packet Structures:
  *
- * pairing packet (2 bytes)
+ * pairing packet (3 bytes)
  * [START(1)][MSG(1)][END(1)]
- * 0         1       3
+ * 0         1       2
  *
  * test message packet (8 bytes)
  * [START(1)][MSG(1)][TEST ID(4)[SELECTION(1)][END(1)]

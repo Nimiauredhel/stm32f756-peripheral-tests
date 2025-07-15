@@ -1,5 +1,6 @@
 #include "client.h"
 
+#define CLIENT_PORT (34567)
 #define SERVER_PORT (45678)
 
 static int sockfd = 0;
@@ -8,6 +9,8 @@ static socklen_t server_rx_addr_len = sizeof(server_rx_addr);
 
 static uint8_t client_tx_buffer[TEST_REQUEST_PACKET_MAX_SIZE_BYTES] = {0};
 static uint8_t client_rx_buffer[TEST_MSG_PACKET_SIZE_BYTES] = {0};
+
+static bool is_paired = false;
 
 static bool client_send_packet(uint8_t *buffer, size_t length)
 {
@@ -24,9 +27,76 @@ static bool client_send_packet(uint8_t *buffer, size_t length)
     return true;
 }
 
-bool client_send_pairing_packet(void)
+static bool client_send_pairing_packet(void)
 {
+    //inet_aton("192.168.1.255", &server_rx_addr.sin_addr);
+    server_rx_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+    server_rx_addr.sin_port = htons(SERVER_PORT);
+    server_rx_addr.sin_family = AF_INET;
+
+    printf("Sending a client probe.\n");
     return client_send_packet(client_tx_buffer, PAIRING_PACKET_SIZE_BYTES);
+}
+
+void client_try_pairing(void)
+{
+    static const uint8_t resend_threshold = 10;
+
+    static struct sockaddr_in new_server_addr = {0};
+    static socklen_t new_server_addr_len = sizeof(new_server_addr);
+
+    if (is_paired || should_terminate) return;
+
+    client_fill_pairing_packet(TESTMSG_PAIRING_PROBE);
+
+    printf("Awaiting a server beacon.\n");
+
+    uint8_t wrong_packet_counter = 0;
+    client_send_pairing_packet();
+
+    while (!should_terminate && !is_paired)
+    {
+        if (wrong_packet_counter >= resend_threshold)
+        {
+            wrong_packet_counter = 0;
+            client_send_pairing_packet();
+        }
+
+        size_t received_bytes = recvfrom(sockfd, client_rx_buffer, sizeof(client_rx_buffer), 0, (struct sockaddr*)&new_server_addr, &new_server_addr_len);
+
+        printf("Received packet of size %ld.\n", received_bytes);
+
+        if (received_bytes <= 0)
+        {
+            perror("Receiving failed");
+        }
+        else if(new_server_addr.sin_port == CLIENT_PORT)
+        {
+            // most likely our broadcast
+            continue;
+        }
+        else if (received_bytes == 3 && client_rx_buffer[0] == TEST_PACKET_START_BYTE_VALUE
+                && client_rx_buffer[TEST_PACKET_MSG_BYTE_OFFSET] == TESTMSG_PAIRING_BEACON
+                && client_rx_buffer[TEST_PACKET_ID_BYTE_OFFSET] == TEST_PACKET_END_BYTE_VALUE)
+        {
+                server_rx_addr = new_server_addr;
+                server_rx_addr.sin_port = htons(SERVER_PORT);
+                server_rx_addr_len = new_server_addr_len;
+                printf("Paired with server at IP %s !\n", inet_ntoa(server_rx_addr.sin_addr));
+                is_paired = true;
+        }
+        else
+        {
+            wrong_packet_counter++;
+            printf("Received unexpected packet.\n");
+            break;
+        }
+    }
+}
+
+bool client_is_paired(void)
+{
+    return is_paired;
 }
 
 bool client_send_test_message_packet(void)
@@ -104,8 +174,11 @@ void client_await_response(uint8_t test_selection_byte)
     }
 }
 
-void client_init(char *server_ip_str)
+void client_init(void)
 {
+    static const int one = 1;
+
+    /*
     bzero(&server_rx_addr, sizeof(server_rx_addr));
     server_rx_addr.sin_family = AF_INET;
     server_rx_addr.sin_port = htons(SERVER_PORT);
@@ -115,10 +188,30 @@ void client_init(char *server_ip_str)
         printf("Failed parsing IP.\n");
         exit(EXIT_FAILURE);
     }
+    */
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
     {
         perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    struct sockaddr_in bound_addr = {0};
+    bound_addr.sin_addr.s_addr = INADDR_ANY;
+    bound_addr.sin_port = htons(CLIENT_PORT);
+
+    if (bind(sockfd, &bound_addr, sizeof(bound_addr)) < 0)
+    {
+        perror("Socket binding failed");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
+
+
+    if(setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &one, sizeof(one)) < 0)
+    {
+        perror("Setting socket broadcast permission failed");
+        close(sockfd);
         exit(EXIT_FAILURE);
     }
 }

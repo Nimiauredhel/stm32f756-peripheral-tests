@@ -7,6 +7,7 @@ char test_names[NUM_POSSIBLE_TESTS][8] =
 
 void interface_init(void)
 {
+    /*
     char server_ip_str[24] = {0};
     printf("Please input server IP.\n");
     fgets(server_ip_str, sizeof(server_ip_str), stdin);
@@ -16,8 +17,9 @@ void interface_init(void)
         printf("Defaulting to localhost.\n");
         sprintf(server_ip_str, "127.0.0.1");
     }
+    */
 
-    client_init(server_ip_str);
+    client_init();
 }
 
 void interface_loop(void)
@@ -32,6 +34,13 @@ void interface_loop(void)
 
     while(!should_terminate)
     {
+        while (!client_is_paired() && !should_terminate)
+        {
+            client_try_pairing();
+        }
+
+        if (should_terminate) break;
+
         // resetting all values asked from user
         explicit_bzero(test_str_buff, sizeof(test_str_buff));
         explicit_bzero(numeric_input_buff, sizeof(numeric_input_buff));
