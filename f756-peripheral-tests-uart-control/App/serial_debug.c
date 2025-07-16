@@ -1,8 +1,12 @@
 /*
- * uart_io.c
+ * serial_debug.c
  *
  *  Created on: Apr 11, 2025
  *      Author: mickey
+ */
+
+/**
+ * @file serial_debug.c
  */
 
 #include "serial_debug.h"

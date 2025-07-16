@@ -4,6 +4,11 @@
  *  Created on: Jul 7, 2025
  *      Author: mickey
  */
+
+/**
+ * @file peripheral_tests.c
+ */
+
 #include <math.h>
 
 #include "main.h"
@@ -51,7 +56,7 @@ extern ADC_HandleTypeDef hadc1;
 extern CRC_HandleTypeDef hcrc;
 
 volatile uint8_t test_string_len = 0;
-char test_string_buff[TEST_STRING_MAX_LEN] = {0};
+char test_string_buff[TEST_PACKET_STR_MAX_LEN] = {0};
 uint32_t test_string_crc = 0;
 
 TestData_t test_defs[NUM_POSSIBLE_TESTS] =
@@ -89,8 +94,8 @@ static bool test_timer(const char *test_string, const uint8_t len)
 
 static bool test_uart(const char *test_string, const uint8_t len)
 {
-	static char uart_test_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
-	static char uart_test_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
+	static char uart_test_rx_buff_1[TEST_PACKET_STR_MAX_LEN] = {0};
+	static char uart_test_rx_buff_2[TEST_PACKET_STR_MAX_LEN] = {0};
 
 	bzero(uart_test_rx_buff_1, sizeof(uart_test_rx_buff_1));
 	bzero(uart_test_rx_buff_2, sizeof(uart_test_rx_buff_2));
@@ -112,10 +117,10 @@ static bool test_uart(const char *test_string, const uint8_t len)
 
 static bool test_spi(const char *test_string, const uint8_t len)
 {
-	static char spi_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
-	static char spi_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
-	static char spi_rx_buff_dummy[TEST_STRING_MAX_LEN] = {0};
-	static char spi_tx_buff_dummy[TEST_STRING_MAX_LEN] = {0};
+	static char spi_rx_buff_1[TEST_PACKET_STR_MAX_LEN] = {0};
+	static char spi_rx_buff_2[TEST_PACKET_STR_MAX_LEN] = {0};
+	static char spi_rx_buff_dummy[TEST_PACKET_STR_MAX_LEN] = {0};
+	static char spi_tx_buff_dummy[TEST_PACKET_STR_MAX_LEN] = {0};
 
 	bzero(spi_rx_buff_1, sizeof(spi_rx_buff_1));
 	bzero(spi_rx_buff_2, sizeof(spi_rx_buff_2));
@@ -137,8 +142,8 @@ static bool test_spi(const char *test_string, const uint8_t len)
 
 static bool test_i2c(const char *test_string, const uint8_t len)
 {
-	static char i2c_rx_buff_1[TEST_STRING_MAX_LEN] = {0};
-	static char i2c_rx_buff_2[TEST_STRING_MAX_LEN] = {0};
+	static char i2c_rx_buff_1[TEST_PACKET_STR_MAX_LEN] = {0};
+	static char i2c_rx_buff_2[TEST_PACKET_STR_MAX_LEN] = {0};
 
 	bzero(i2c_rx_buff_1, sizeof(i2c_rx_buff_1));
 	bzero(i2c_rx_buff_2, sizeof(i2c_rx_buff_2));

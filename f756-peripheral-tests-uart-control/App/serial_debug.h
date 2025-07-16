@@ -1,8 +1,13 @@
 /*
- * uart_io.h
+ * serial_debug.h
  *
  *  Created on: Apr 11, 2025
  *      Author: mickey
+ */
+
+/**
+ * @file serial_debug.h
+ * @brief Header file for the 'debug' serial printing utility.
  */
 
 #ifndef SERIAL_DEBUG_H_

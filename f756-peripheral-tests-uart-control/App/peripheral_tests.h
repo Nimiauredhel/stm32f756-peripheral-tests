@@ -5,16 +5,14 @@
  *      Author: mickey
  */
 
+/**
+ * @file peripheral_tests.h
+ * @brief Header file for the module where the peripheral tests are implemented.
+ */
+
 #ifndef INC_PERIPHERAL_TESTS_H_
 #define INC_PERIPHERAL_TESTS_H_
 
-#include "main.h"
-#include "packet_ops.h"
-
-/**
- * @brief The maximum allowed length (in bytes) of strings used for peripheral testing.
- */
-#define TEST_STRING_MAX_LEN (TEST_PACKET_STR_MAX_LEN)
 /**
  * @brief The timeout value (in ticks) to be used by tested peripherals where applicable.
  */
@@ -56,7 +54,7 @@ extern volatile uint8_t test_string_len;
  * @brief The test string used by the currently running peripheral tests.
  * TODO: refactor into struct
  */
-extern char test_string_buff[TEST_STRING_MAX_LEN];
+extern char test_string_buff[TEST_PACKET_STR_MAX_LEN];
 /**
  * @brief Reference CRC value of test string used by the currently running peripheral tests.
  * TODO: refactor into struct

@@ -5,6 +5,11 @@
  *      Author: User
  */
 
+/**
+ * @file transmitter.h
+ * @brief Header file for the 'transmitter' (ethernet out) task functionality.
+ */
+
 #ifndef TRANSMITTER_H_
 #define TRANSMITTER_H_
 

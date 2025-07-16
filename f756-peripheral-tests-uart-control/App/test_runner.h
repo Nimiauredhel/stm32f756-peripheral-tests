@@ -5,6 +5,11 @@
  *      Author: User
  */
 
+/**
+ * @file server_common.h
+ * @brief Header file for the 'test runner' task functionality.
+ */
+
 #ifndef TEST_RUNNER_H_
 #define TEST_RUNNER_H_
 

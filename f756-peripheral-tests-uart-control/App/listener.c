@@ -1,12 +1,21 @@
 /*
- * eth_server.c
+ * listener.c
  *
  *  Created on: Jul 11, 2025
  *      Author: mickey
  */
 
-#include "server_common.h"
+/**
+ * @file listener.c
+ * @details
+ * The 'Listener' task is in charge of receiving incoming UDP packets over an ethernet link
+ * and reacting appropriately, either by issuing an immediate response or forwarding them to further processing.
+ */
+
 #include "listener.h"
+#include "main.h"
+#include "server_common.h"
+
 
 extern struct netif gnetif;
 extern osMessageQueueId_t TestQueueHandle;

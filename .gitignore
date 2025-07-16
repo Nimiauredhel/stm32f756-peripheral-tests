@@ -4,6 +4,9 @@ compile_commands.json
 temp/
 build/
 
+docs/html/
+docs/latex/
+
 *.bak
 
 *.old

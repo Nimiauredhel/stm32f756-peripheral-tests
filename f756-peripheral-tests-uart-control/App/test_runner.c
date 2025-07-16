@@ -5,6 +5,14 @@
  *      Author: User
  */
 
+/**
+ * @file test_runner.c
+ * @details
+ * The 'Test Runner' task is in charge of fetching test requests from the test queue,
+ * running them one request at a time (as a single request may span several test types and many iterations),
+ * and finally, composing the test results into a packet and forwarding them to the outbox queue.
+ */
+
 #include "server_common.h"
 #include "test_runner.h"
 

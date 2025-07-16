@@ -5,12 +5,13 @@
  *      Author: mickey
  */
 
+/**
+ * @file listener.h
+ * @brief Header file for the ethernet listener.
+ */
+
 #ifndef LISTENER_H_
 #define LISTENER_H_
-
-#include "main.h"
-#include "test_packet_def.h"
-#include "peripheral_tests.h"
 
 /**
  * @brief Initialization of the ethernet listener task.
