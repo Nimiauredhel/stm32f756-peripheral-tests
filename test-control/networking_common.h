@@ -5,6 +5,5 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <ifaddrs.h>
-#include <stdbool.h>
 
 #endif

@@ -1,10 +1,5 @@
 #include "interface.h"
 
-char test_names[NUM_POSSIBLE_TESTS][8] =
-{
-    "TIMER\0", "UART\0","SPI\0", "I2C\0", "ADC\0",
-};
-
 void interface_init(void)
 {
     client_init();

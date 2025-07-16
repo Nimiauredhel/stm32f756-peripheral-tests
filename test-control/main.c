@@ -1,3 +1,8 @@
+/**
+ * @file main.c
+ * @brief Entry point for the test client.
+ */
+
 #include "common.h"
 #include "interface.h"
 

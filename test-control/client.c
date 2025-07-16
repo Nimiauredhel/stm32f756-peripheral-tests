@@ -1,18 +1,29 @@
+/**
+ * @file client.c
+ * @brief Source file for the test client module's networking functions.
+ */
+
 #include "client.h"
-#include "net/if.h"
 
-#define CLIENT_PORT (34567)
-#define SERVER_PORT (45678)
-
+/// @brief Socket handle for both incoming and outgoing communication.
 static int sockfd = 0;
-static struct sockaddr_in server_rx_addr;
+/// @brief Destination address of the testing server.
+static struct sockaddr_in server_rx_addr = {0};
+/// @brief Required length variable for @ref server_rx_addr.
 static socklen_t server_rx_addr_len = sizeof(server_rx_addr);
-
+/// Storage buffer for outgoing packets.
 static uint8_t client_tx_buffer[TEST_REQUEST_PACKET_MAX_SIZE_BYTES+1] = {0};
+/// Storage buffer for incoming packets.
 static uint8_t client_rx_buffer[TEST_REQUEST_PACKET_MIN_SIZE_BYTES+1] = {0};
-
+/// @brief False until client is paired with server.
 static bool is_paired = false;
 
+/**
+ * @brief Sends a [length] sized portion of [buffer] to the paired test server.
+ * This function is static as it is typically wrapped by other client functions.
+ * @param buffer Pointer to the data to be sent.
+ * @param length Length of the data to send.
+ */
 static bool client_send_packet(uint8_t *buffer, size_t length)
 {
     ssize_t sent_bytes = sendto(sockfd, buffer, length, 0, (struct sockaddr*)&server_rx_addr, server_rx_addr_len);
@@ -28,9 +39,15 @@ static bool client_send_packet(uint8_t *buffer, size_t length)
     return true;
 }
 
+/**
+ * @brief Sets @ref server_rx_addr to broadcast, and sends a portion of the outgoing buffer corresponding to the size of a pairing packet.
+ * This function is static since it is only ever called internally by @ref client_try_pairing().
+ * @details
+ * This function broadcasts a 'probe' packet.
+ * A compliant server receiving this packet is expected to identify itself with a 'beacon' packet.
+ */
 static bool client_send_pairing_packet(void)
 {
-    //inet_aton("192.168.1.255", &server_rx_addr.sin_addr);
     server_rx_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
     server_rx_addr.sin_port = htons(SERVER_PORT);
     server_rx_addr.sin_family = AF_INET;
@@ -46,7 +63,7 @@ void client_try_pairing(void)
 
     if (is_paired || should_terminate) return;
 
-    client_fill_pairing_packet(TESTMSG_PAIRING_PROBE);
+    client_fill_pairing_packet();
 
     printf("Awaiting a server beacon.\n");
 
@@ -219,11 +236,11 @@ void client_deinit(void)
     if (sockfd > 0) close(sockfd);
 }
 
-void client_fill_pairing_packet(TestPacketMsg_t msg)
+void client_fill_pairing_packet(void)
 {
     explicit_bzero(client_tx_buffer, TEST_MSG_PACKET_SIZE_BYTES);
     client_tx_buffer[0] = TEST_PACKET_START_BYTE_VALUE;
-    client_tx_buffer[TEST_PACKET_MSG_BYTE_OFFSET] = msg;
+    client_tx_buffer[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_PAIRING_PROBE;
     client_tx_buffer[TEST_PACKET_ID_BYTE_OFFSET] = TEST_PACKET_END_BYTE_VALUE;
 }
 

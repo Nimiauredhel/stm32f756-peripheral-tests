@@ -1,16 +1,14 @@
 #include "common.h"
 
+const char test_names[NUM_POSSIBLE_TESTS][8] =
+{
+    "TIMER\0", "UART\0","SPI\0", "I2C\0", "ADC\0",
+};
+
 uint16_t next_test_id_client_half = 0;
 
-/**
- * Global flag set by OS termination signals
- * and polled by functions to allow graceful termination.
- */
 bool should_terminate = false;
 
-/**
- * Hooks up OS signals to our custom handler.
- */
 void initialize_signal_handler(void)
 {
     should_terminate = false;
@@ -23,11 +21,6 @@ void initialize_signal_handler(void)
     sigaction(SIGHUP, &action, NULL);
 }
 
-/**
- * Handles selected OS signals.
- * Termination signals are caught to set the should_terminate flag
- * which signals running functions that they should attempt graceful termination.
- */
 void signal_handler(int signum)
 {
     switch (signum)
@@ -40,10 +33,6 @@ void signal_handler(int signum)
     }
 }
 
-/**
- * Returns the seconds elapsed since a given clock value.
- * Used for timing operations!
- */
 float seconds_since_clock(struct timespec start_clock)
 {
     struct timespec now_clock;
