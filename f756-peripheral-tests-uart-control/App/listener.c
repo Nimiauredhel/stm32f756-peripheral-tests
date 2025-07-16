@@ -27,6 +27,11 @@ static OutgoingMessage_t message_scratch = {0};
 
 static char debug_buff[SERIAL_DEBUG_MAX_LEN] = {0};
 
+/**
+ * @brief Checks whether the ethernet link status changed since the local status index was last updated.
+ * @retval true Link status changed since the status idx was last updated.
+ * @retval false No change since the status idx was last updated.
+ */
 static bool eth_link_was_down(void)
 {
 	uint8_t eth_link_status_idx = lwip_get_eth_link_status_idx();
@@ -35,6 +40,9 @@ static bool eth_link_was_down(void)
 			|| eth_link_status_idx == 0);
 }
 
+/**
+ * @brief Blocks task until ethernet link is up, then updates the local status index.
+ */
 static void await_eth_link(void)
 {
 	uint8_t eth_link_status_idx = lwip_get_eth_link_status_idx();
@@ -53,6 +61,9 @@ static void await_eth_link(void)
 	last_link_up_idx = eth_link_status_idx;
 }
 
+/**
+ * @brief Blocks task until device is assigned an IP address, then binds it to the listener if necessary.
+ */
 static void bind_listener(void)
 {
 	ip4_addr_t given_address = *netif_ip4_addr(&gnetif);
@@ -95,6 +106,12 @@ static void bind_listener(void)
 	}
 }
 
+/**
+ * @details
+ * The @ref test_listener_task_init function explicitly wipes @ref request_scratch, the buffer used to hold incoming packets.
+ * It then initializes the @ref netconn to be used for receiving the packets,
+ * and sets its timeout duration according to @ref recv_timeout_ms.
+ */
 void test_listener_task_init(void)
 {
 	serial_debug_enqueue("Listener Task started.");
@@ -113,6 +130,13 @@ void test_listener_task_init(void)
 	netconn_set_recvtimeout(listener_conn, recv_timeout_ms);
 }
 
+/**
+ * @details
+ * The @ref test_listener_task_loop function is constantly listening for incoming UDP packets.
+ * It checks the ethernet link status each iteration with @ref eth_link_was_down and rebinds if necessary.
+ * The received packet is then filtered by type. Test requests are held in @ref request_scratch and sent to the test queue.
+ * Other packets require an immediate response, which is constructed in @ref message_scratch and sent directly to the outbox queue.
+ */
 void test_listener_task_loop(void)
 {
 	static struct netbuf *listener_netbuf = NULL;

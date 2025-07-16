@@ -11,10 +11,22 @@
 #include "main.h"
 #include "packet_ops.h"
 
+/**
+ * @brief The maximum allowed length (in bytes) of strings used for peripheral testing.
+ */
 #define TEST_STRING_MAX_LEN (TEST_PACKET_STR_MAX_LEN)
+/**
+ * @brief The timeout value (in ticks) to be used by tested peripherals where applicable.
+ */
 #define TEST_TIMEOUT_TICKS (pdMS_TO_TICKS(5000))
+/**
+ * @brief The delay time (in ticks) between test related operations.
+ */
 #define TEST_GAP_TICKS (pdMS_TO_TICKS(500))
 
+/**
+ * @brief Type of variables representing the state of a peripheral under test.
+ */
 typedef volatile enum PeripheralTestState
 {
 	TESTSTATE_READY = 0,
@@ -24,6 +36,9 @@ typedef volatile enum PeripheralTestState
 	TESTSTATE_FAILURE = 4,
 } PeripheralTestState_t;
 
+/**
+ * @brief Type of variables holding data used by a variable under test.
+ */
 typedef struct TestData
 {
 	const char name[16];
@@ -32,12 +47,32 @@ typedef struct TestData
 	bool (*func)(const char*, const uint8_t);
 } TestData_t;
 
+/**
+ * @brief Length of the test string used by the currently running peripheral tests.
+ * TODO: refactor into struct
+ */
 extern volatile uint8_t test_string_len;
+/**
+ * @brief The test string used by the currently running peripheral tests.
+ * TODO: refactor into struct
+ */
 extern char test_string_buff[TEST_STRING_MAX_LEN];
+/**
+ * @brief Reference CRC value of test string used by the currently running peripheral tests.
+ * TODO: refactor into struct
+ */
 extern uint32_t test_string_crc;
 
+/**
+ * @brief Array of variables holding up to date information about the peripherals under test.
+ * TODO: refactor into struct, formalize access
+ */
 extern TestData_t test_defs[NUM_POSSIBLE_TESTS];
 
+/**
+ * @brief A generic loop used by the tasks running individual peripheral tests.
+ * @param [in] *def The specific data used by the task to run individual tests.
+ */
 void test_task_loop(TestData_t *def);
 
 #endif /* INC_PERIPHERAL_TESTS_H_ */

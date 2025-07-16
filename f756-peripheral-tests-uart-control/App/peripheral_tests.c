@@ -9,10 +9,35 @@
 #include "main.h"
 #include "peripheral_tests.h"
 
+/**
+ * @brief The UART peripheral test implementation.
+ * @param [in] *test_string The string used by the current peripheral test.
+ * @param [in] len The length of the string used by the current peripheral test.
+ */
 static bool test_uart(const char *test_string, const uint8_t len);
+/**
+ * @brief The Timer peripheral test implementation.
+ * @param [in] *test_string The string used by the current peripheral test.
+ * @param [in] len The length of the string used by the current peripheral test.
+ */
 static bool test_timer(const char *test_string, const uint8_t len);
+/**
+ * @brief The SPI peripheral test implementation.
+ * @param [in] *test_string The string used by the current peripheral test.
+ * @param [in] len The length of the string used by the current peripheral test.
+ */
 static bool test_spi(const char *test_string, const uint8_t len);
+/**
+ * @brief The I2C peripheral test implementation.
+ * @param [in] *test_string The string used by the current peripheral test.
+ * @param [in] len The length of the string used by the current peripheral test.
+ */
 static bool test_i2c(const char *test_string, const uint8_t len);
+/**
+ * @brief The ADC peripheral test implementation.
+ * @param [in] *test_string The string used by the current peripheral test.
+ * @param [in] len The length of the string used by the current peripheral test.
+ */
 static bool test_adc(const char *test_string, const uint8_t len);
 
 extern UART_HandleTypeDef huart2;
@@ -52,12 +77,6 @@ static bool test_timer(const char *test_string, const uint8_t len)
 		HAL_TIM_IC_Stop(&htim1, TIM_CHANNEL_2);
 		HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
 		uint32_t ic_result = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2);
-
-		/*
-		char ic_buff[64] = {0};
-		snprintf(ic_buff, 64, "Expected: %lu, IC value: %lu", duty_val, ic_result);
-		serial_debug_enqueue(ic_buff, 0);
-		*/
 
 		uint32_t margin = ic_result > duty_val ? ic_result - duty_val
 				: duty_val - ic_result;

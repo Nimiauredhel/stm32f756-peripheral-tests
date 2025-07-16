@@ -1,4 +1,5 @@
 #include "client.h"
+#include "net/if.h"
 
 #define CLIENT_PORT (34567)
 #define SERVER_PORT (45678)
@@ -60,7 +61,7 @@ void client_try_pairing(void)
         if (received_bytes <= 0)
         {
             int err = errno;
-            if (err == ETIMEDOUT)
+            if (err == ETIMEDOUT || err == EAGAIN || err == EWOULDBLOCK)
             {
                 client_send_pairing_packet();
                 continue;
@@ -118,7 +119,7 @@ void client_await_response(uint8_t test_selection_byte)
         if (received_bytes <= 0)
         {
             int err = errno;
-            if (err == ETIMEDOUT) continue;
+            if (err == ETIMEDOUT || err == EAGAIN || err == EWOULDBLOCK) continue;
             perror("Receiving failed");
         }
         else if (client_rx_buffer[0] == TEST_PACKET_START_BYTE_VALUE)

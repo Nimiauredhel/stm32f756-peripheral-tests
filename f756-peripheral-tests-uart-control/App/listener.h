@@ -12,7 +12,13 @@
 #include "test_packet_def.h"
 #include "peripheral_tests.h"
 
+/**
+ * @brief Initialization of the ethernet listener task.
+ */
 void test_listener_task_init(void);
+/**
+ * @brief Operation loop of the ethernet listener task.
+ */
 void test_listener_task_loop(void);
 
 #endif /* LISTENER_H_ */
