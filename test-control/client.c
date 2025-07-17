@@ -3,6 +3,9 @@
  * @brief Source file for the test client module's networking functions.
  */
 
+#include "common.h"
+#include "networking_common.h"
+#include "db.h"
 #include "client.h"
 
 /// @brief Socket handle for both incoming and outgoing communication.
@@ -11,10 +14,14 @@ static int sockfd = 0;
 static struct sockaddr_in server_rx_addr = {0};
 /// @brief Required length variable for @ref server_rx_addr.
 static socklen_t server_rx_addr_len = sizeof(server_rx_addr);
-/// Storage buffer for outgoing packets.
+/// @brief Storage buffer for outgoing packets.
 static uint8_t client_tx_buffer[TEST_REQUEST_PACKET_MAX_SIZE_BYTES+1] = {0};
-/// Storage buffer for incoming packets.
+/// @brief Storage buffer for incoming packets.
 static uint8_t client_rx_buffer[TEST_REQUEST_PACKET_MIN_SIZE_BYTES+1] = {0};
+/// @brief Storage buffer for the last sent "new test request" packet.
+static uint8_t latest_request_buffer[TEST_REQUEST_PACKET_MAX_SIZE_BYTES+1] = {0};
+/// @brief Records the clock time when the last "new test request" was saved.
+static struct timespec latest_request_clock = {0};
 /// @brief False until client is paired with server.
 static bool is_paired = false;
 
@@ -123,7 +130,14 @@ bool client_send_test_request_packet(void)
     return client_send_packet(client_tx_buffer, TEST_REQUEST_PACKET_MIN_SIZE_BYTES + client_tx_buffer[TEST_PACKET_STRING_LEN_OFFSET]);
 }
 
-void client_await_response(uint8_t test_selection_byte)
+void client_save_test_request(void)
+{
+    clock_gettime(CLOCK_MONOTONIC, &latest_request_clock);
+    explicit_bzero(latest_request_buffer, sizeof(latest_request_buffer));
+    memcpy(latest_request_buffer, client_tx_buffer, sizeof(client_tx_buffer));
+}
+
+void client_await_response(void)
 {
     struct sockaddr_in server_tx_addr = server_rx_addr;
     socklen_t server_tx_addr_len = sizeof(server_tx_addr);
@@ -139,37 +153,63 @@ void client_await_response(uint8_t test_selection_byte)
             if (err == ETIMEDOUT || err == EAGAIN || err == EWOULDBLOCK) continue;
             perror("Receiving failed");
         }
-        else if (client_rx_buffer[0] == TEST_PACKET_START_BYTE_VALUE)
+        else if (client_rx_buffer[0] == TEST_PACKET_START_BYTE_VALUE
+                && received_bytes >= TEST_MSG_PACKET_SIZE_BYTES)
         {
             switch((TestPacketMsg_t)client_rx_buffer[TEST_PACKET_MSG_BYTE_OFFSET])
             {
             case TESTMSG_TEST_NEW_ACK:
-                printf("Device acknowledged test request, ID %u .\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
+                if (*(uint16_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET+2) != *(uint16_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET+2))
+                {
+                    printf("Wrong left-half of test ID in received 'new test ack' packet.\n");
+                }
+                else
+                {
+                    printf("Device acknowledged test request, updated Test ID: %u .\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
+                    *(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET) = *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET);
+                    db_append_request(latest_request_buffer);
+                }
                 break;
             case TESTMSG_TEST_START_ACK:
-                printf("Device acknowledged test ID %u started.\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
+                if (*(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET) != *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET))
+                {
+                    printf("Received wrong test ID in received 'test start ack' packet.\n");
+                }
+                else
+                {
+                    printf("Device acknowledged test ID %u started.\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
+                }
                 break;
             case TESTMSG_TEST_OVER_RESULTS:
-                results_received = true;
-                printf("Received test results for test ID %u.\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
-
-                for (uint8_t i = 0; i < NUM_POSSIBLE_TESTS; i++)
+                if (*(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET) != *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET))
                 {
-                    if (0x01 & (test_selection_byte >> (uint8_t)i))
-                    {
-                        printf("%s Test ", test_names[i]);
+                    printf("Received wrong test ID in received results packet.\n");
+                }
+                else
+                {
+                    results_received = true;
+                    float duration = seconds_since_clock(latest_request_clock);
 
-                        if (0x01 & (client_rx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] >> (uint8_t)i))
+                    printf("Received test results for test ID %u.\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
+
+                    for (uint8_t i = 0; i < NUM_POSSIBLE_TESTS; i++)
+                    {
+                        if (0x01 & (latest_request_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] >> (uint8_t)i))
                         {
-                            printf("Passed.\n");
-                        }
-                        else
-                        {
-                            printf("Failed.\n");
+                            printf("%s Test ", test_names[i]);
+
+                            if (0x01 & (client_rx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] >> (uint8_t)i))
+                            {
+                                printf("Passed.\n");
+                            }
+                            else
+                            {
+                                printf("Failed.\n");
+                            }
                         }
                     }
+                    db_append_results(client_rx_buffer, latest_request_buffer, duration);
                 }
-
                 break;
             case TESTMSG_FLAG_CLIENT:
             case TESTMSG_FLAG_SERVER:

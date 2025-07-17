@@ -59,4 +59,9 @@ void signal_handler(int signum);
  */
 float seconds_since_clock(struct timespec start_clock);
 
+/**
+ * @brief Gets the current date and time and writes the string into [buff].
+ */
+void datetime_str_nonalloc(char *buff, size_t maxlen);
+
 #endif

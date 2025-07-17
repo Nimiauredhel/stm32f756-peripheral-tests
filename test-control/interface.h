@@ -6,9 +6,6 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
-#include "common.h"
-#include "client.h"
-
 /**
  * @brief Initializes the user interface and control flow.
  * Currently does nothing but call @ref client_init().

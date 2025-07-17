@@ -6,9 +6,6 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include "common.h"
-#include "networking_common.h"
-
 /**
  * @brief Initializes a singular socket for the test client and binds it to the pre-determined client port.
  */
@@ -46,8 +43,13 @@ bool client_send_test_message_packet(void);
  */
 bool client_send_test_request_packet(void);
 /**
+ * @brief Copies the outgoing packet buffer to @ref latest_request_buffer for later reference,
+ * and records the clock time into @ref latest_request_clock for later measurement.
+ */
+void client_save_test_request(void);
+/**
  * @brief Listens for responses from a test server following the sending of a test request.
  */
-void client_await_response(uint8_t test_selection_byte);
+void client_await_response(void);
 
 #endif

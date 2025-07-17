@@ -41,3 +41,11 @@ float seconds_since_clock(struct timespec start_clock)
     elapsed_float += (now_clock.tv_sec - start_clock.tv_sec);
     return elapsed_float;
 }
+
+void datetime_str_nonalloc(char *buff, size_t maxlen)
+{
+    if (buff == NULL) return;
+
+    time_t current_time = time(NULL);
+    strftime(buff, maxlen, "%Y/%m/%d %H:%M:%S", localtime(&current_time));
+}

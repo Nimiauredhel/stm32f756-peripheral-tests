@@ -1,3 +1,5 @@
+#include "common.h"
+#include "client.h"
 #include "interface.h"
 
 void interface_init(void)
@@ -93,7 +95,8 @@ void interface_loop(void)
         if(client_send_test_request_packet())
         {
             printf("Sent test request.\n");
-            client_await_response(test_selection_byte);
+            client_save_test_request();
+            client_await_response();
         }
         else
         {
