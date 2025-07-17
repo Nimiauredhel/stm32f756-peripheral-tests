@@ -80,9 +80,10 @@ void interface_loop(void)
             }
         }
 
-        if (should_terminate)
+        if (test_selection_byte == 0)
         {
-            break;
+            printf("No tests....? \n");
+            continue;
         }
 
         selection_valid = false;
