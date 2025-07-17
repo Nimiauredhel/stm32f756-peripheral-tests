@@ -1,5 +1,5 @@
 SOURCE=  *.c
-PROGRAM=test_control
+PROGRAM=test_client
 EXE_NAME=$(PROGRAM)
 ARGS=
 BUILD_DIR=./build/
