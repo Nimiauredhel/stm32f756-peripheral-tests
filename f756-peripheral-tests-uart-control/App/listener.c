@@ -22,9 +22,9 @@ extern osMessageQueueId_t TestQueueHandle;
 extern osMessageQueueId_t OutboxQueueHandle;
 
 static const uint16_t recv_timeout_ms = 1000;
-static const uint16_t recv_idle_debug_ms = 30000;
+static const uint16_t recv_idle_debug_ms = 60000;
 
-static uint32_t recv_idle_counter_ms = 0;
+static uint64_t recv_idle_counter_ms = 0;
 
 static struct netconn *listener_conn = NULL;
 static ip4_addr_t listener_address = {0};
@@ -198,6 +198,9 @@ void test_listener_task_loop(void)
 					// forward request to test queue
 					bool forwarded = (osOK == osMessageQueuePut(TestQueueHandle, &request_scratch, 0, pdMS_TO_TICKS(1000)));
 
+					snprintf(debug_buff, sizeof(debug_buff), "Test request %sforwarded to queue.", forwarded ? "" : "NOT ");
+					serial_debug_enqueue(debug_buff);
+
 					// confirm reception
 					explicit_bzero(&message_scratch, sizeof(message_scratch));
 					message_scratch.addr = request_scratch.client_addr;
@@ -208,7 +211,11 @@ void test_listener_task_loop(void)
 					message_scratch.message[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_TEST_NEW_ACK;
 					message_scratch.message[TEST_PACKET_SELECTION_BYTE_OFFSET] = forwarded ? 1 : 0;
 					message_scratch.message[TEST_PACKET_ITERATIONS_BYTE_OFFSET] = TEST_PACKET_END_BYTE_VALUE;
-					osMessageQueuePut(OutboxQueueHandle, &message_scratch, 0, pdMS_TO_TICKS(1000));
+
+					for (uint8_t i = 0; i < 4; i++)
+					{
+						osMessageQueuePut(OutboxQueueHandle, &message_scratch, 0, pdMS_TO_TICKS(1000));
+					}
 					break;
 				case TESTMSG_PAIRING_PROBE:
 					serial_debug_enqueue("Received a client probe packet.");
@@ -238,7 +245,7 @@ void test_listener_task_loop(void)
 
 			if (recv_idle_counter_ms % recv_idle_debug_ms == 0)
 			{
-				snprintf(debug_buff, sizeof(debug_buff), "Listener idle for %lu seconds.", recv_idle_counter_ms/1000);
+				snprintf(debug_buff, sizeof(debug_buff), "Listener idle for %lu minutes.", recv_idle_counter_ms/60000);
 				serial_debug_enqueue(debug_buff);
 			}
 			break;
