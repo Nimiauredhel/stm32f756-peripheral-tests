@@ -24,7 +24,7 @@ extern osMessageQueueId_t OutboxQueueHandle;
 static const uint16_t recv_timeout_ms = 1000;
 static const uint16_t recv_idle_debug_ms = 60000;
 
-static uint64_t recv_idle_counter_ms = 0;
+static uint32_t recv_idle_counter_ms = 0;
 
 static struct netconn *listener_conn = NULL;
 static ip4_addr_t listener_address = {0};
@@ -243,9 +243,10 @@ void test_listener_task_loop(void)
 		case ERR_TIMEOUT:
 			recv_idle_counter_ms += recv_timeout_ms;
 
-			if (recv_idle_counter_ms % recv_idle_debug_ms == 0)
+			if (recv_idle_counter_ms >= recv_idle_debug_ms
+				&& recv_idle_counter_ms % recv_idle_debug_ms == 0)
 			{
-				snprintf(debug_buff, sizeof(debug_buff), "Listener idle for %lu minutes.", recv_idle_counter_ms/60000);
+				snprintf(debug_buff, sizeof(debug_buff), "Listener idle for %lu seconds.", recv_idle_counter_ms/1000);
 				serial_debug_enqueue(debug_buff);
 			}
 			break;
