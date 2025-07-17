@@ -24,6 +24,13 @@
 
 #include "test_packet_def.h"
 
+typedef enum TerminationReason
+{
+    TERMR_UNKNOWN = 0,
+    TERMR_SIGNAL = 1,
+    TERMR_ERROR = 2,
+} TerminationReason_t;
+
 /**
  * @brief Names of the possible tests, for the user interface.
  */
@@ -33,6 +40,11 @@ extern const char test_names[NUM_POSSIBLE_TESTS][8];
  * @brief Next 16-bit value to be used as the left half of a 32-bit Test ID.
  */
 extern uint16_t next_test_id_client_half;
+
+/**
+ * @brief Global flag indicating reason for program termination.
+ */
+extern TerminationReason_t why_terminate;
 
 /**
  * @brief Global flag set by OS termination signals

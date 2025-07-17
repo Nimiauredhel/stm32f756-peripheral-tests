@@ -6,7 +6,7 @@ const char test_names[NUM_POSSIBLE_TESTS][8] =
 };
 
 uint16_t next_test_id_client_half = 0;
-
+TerminationReason_t why_terminate = TERMR_UNKNOWN;
 bool should_terminate = false;
 
 void initialize_signal_handler(void)
@@ -28,6 +28,7 @@ void signal_handler(int signum)
         case SIGINT:
         case SIGTERM:
         case SIGHUP:
+            why_terminate = TERMR_SIGNAL;
             should_terminate = true;
             break;
     }

@@ -104,6 +104,5 @@ void interface_loop(void)
         }
     }
 
-    printf("\nTerminated by user.\n");
     client_deinit();
 }

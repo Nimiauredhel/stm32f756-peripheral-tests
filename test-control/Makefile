@@ -13,14 +13,17 @@ DEBUG_FLAGS= $(STRICT_FLAGS) -g -o0
 default:
 	mkdir $(BUILD_DIR)
 	gcc $(SOURCE) $(DEFAULT_FLAGS) $(INC) $(LIBS) -o $(EXE_PATH)
+	make post
                                      
 strict:                              
 	mkdir $(BUILD_DIR)
 	bear -- gcc $(SOURCE) $(STRICT_FLAGS) $(INC) $(LIBS) -o $(EXE_PATH)
+	make post
                     
 debug:              
 	mkdir $(BUILD_DIR)
 	gcc $(SOURCE) $(DEBUG_FLAGS) $(INC) $(LIBS) -o $(EXE_PATH)
+	make post
 
 .ONESHELL:
 run:
@@ -39,3 +42,6 @@ valgrind:
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -f compile_commands.json
+
+post:
+	cp bundled_scripts/* $(BUILD_DIR)

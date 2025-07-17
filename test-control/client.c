@@ -141,6 +141,7 @@ void client_await_response(void)
 {
     struct sockaddr_in server_tx_addr = server_rx_addr;
     socklen_t server_tx_addr_len = sizeof(server_tx_addr);
+    bool request_acknowledged = false;
     bool results_received = false;
 
     while (!should_terminate && !results_received)
@@ -159,12 +160,17 @@ void client_await_response(void)
             switch((TestPacketMsg_t)client_rx_buffer[TEST_PACKET_MSG_BYTE_OFFSET])
             {
             case TESTMSG_TEST_NEW_ACK:
-                if (*(uint16_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET+2) != *(uint16_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET+2))
+                if (request_acknowledged)
+                {
+                    break;
+                }
+                else if (*(uint16_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET+2) != *(uint16_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET+2))
                 {
                     printf("Wrong left-half of test ID in received 'new test ack' packet.\n");
                 }
                 else
                 {
+                    request_acknowledged = true;
                     printf("Device acknowledged test request, updated Test ID: %u .\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
                     *(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET) = *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET);
                     db_append_request(latest_request_buffer);
