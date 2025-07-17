@@ -27,6 +27,10 @@
  |Test Request Packet|START(1)|MSG(1)|TEST ID(4)|SELECTION(1)|ITERATIONS(1)|STRLEN(1)|STRING(0-150)|END(1)|
  |   10-160 bytes    |0       |1     |2         |6           | 7           |8        |9            |9-159 |
  @endverbatim
+ * 
+ * "Why all these cumbersome offsets? Why not use a struct?"
+ *
+ * I wanted to try something different and maybe learn something from the experience, and I definitely learned not to try this again.
  */
 
 /**

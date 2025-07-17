@@ -145,11 +145,11 @@ void client_await_response(void)
     struct sockaddr_in server_tx_addr = server_rx_addr;
     socklen_t server_tx_addr_len = sizeof(server_tx_addr);
     bool request_acknowledged = false;
-    bool results_received = false;
+    bool test_over = false;
 
     uint8_t ack_timeout_counter = 0;
 
-    while (!should_terminate && !results_received)
+    while (!should_terminate && !test_over)
     {
         ssize_t received_bytes = recvfrom(sockfd, client_rx_buffer, sizeof(client_rx_buffer)-1, 0, (struct sockaddr*)&server_tx_addr, &server_tx_addr_len);
 
@@ -189,10 +189,16 @@ void client_await_response(void)
                 }
                 else
                 {
-                    request_acknowledged = true;
-                    printf("Device acknowledged test request, updated Test ID: %u .\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
                     *(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET) = *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET);
                     db_append_request(latest_request_buffer);
+                    if (client_rx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] == 0)
+                    {
+                        printf("Device REJECTED test request, updated Test ID: %u .\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
+                        test_over = true;
+                        break;
+                    }
+                    request_acknowledged = true;
+                    printf("Device acknowledged test request, updated Test ID: %u .\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
                 }
                 break;
             case TESTMSG_TEST_START_ACK:
@@ -212,7 +218,7 @@ void client_await_response(void)
                 }
                 else
                 {
-                    results_received = true;
+                    test_over = true;
                     float duration = seconds_since_clock(latest_request_clock);
 
                     printf("Received test results for test ID %u.\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
