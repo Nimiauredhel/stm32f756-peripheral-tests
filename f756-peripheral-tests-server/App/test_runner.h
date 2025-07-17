@@ -6,7 +6,7 @@
  */
 
 /**
- * @file server_common.h
+ * @file test_runner.h
  * @brief Header file for the 'test runner' task functionality.
  */
 

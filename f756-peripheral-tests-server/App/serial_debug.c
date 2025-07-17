@@ -7,6 +7,7 @@
 
 /**
  * @file serial_debug.c
+ * @brief Source file for the 'debug' serial printing utility.
  */
 
 #include "serial_debug.h"

@@ -7,8 +7,7 @@
 
 /**
  * @file listener.c
- * @details
- * The 'Listener' task is in charge of receiving incoming UDP packets over an ethernet link
+ * @brief The 'Listener' task is in charge of receiving incoming UDP packets over an ethernet link
  * and reacting appropriately, either by issuing an immediate response or forwarding them to further processing.
  */
 

@@ -1,3 +1,8 @@
+/**
+ * @file common.c
+ * @brief Source file for common variables and functions used by different parts of the test client module.
+ */
+
 #include "common.h"
 
 const char test_names[NUM_POSSIBLE_TESTS][8] =

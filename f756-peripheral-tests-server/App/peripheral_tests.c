@@ -7,6 +7,7 @@
 
 /**
  * @file peripheral_tests.c
+ * @brief Source file in which the actual peripheral tests are implemented.
  */
 
 #include <math.h>

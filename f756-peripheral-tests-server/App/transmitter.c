@@ -7,8 +7,7 @@
 
 /**
  * @file transmitter.c
- * @details
- * The 'Transmitter' task is in charge of fetching outbound packets from the outbox queue
+ * @brief The 'Transmitter' task is in charge of fetching outbound packets from the outbox queue
  * and sending them to the intended recipient, utilizing best-effort UDP over an ethernet link.
  */
 
