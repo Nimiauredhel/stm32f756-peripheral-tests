@@ -189,7 +189,7 @@ void test_listener_task_loop(void)
 					memcpy(request_scratch.request, listener_pbuf, listener_pbuf_len);
 					netbuf_delete(listener_netbuf);
 
-					request_scratch.request[TEST_PACKET_ID_BYTE_OFFSET] |= (uint32_t)next_test_id_server_half;
+					*((uint32_t *)request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET) |= (uint32_t)next_test_id_server_half;
 					next_test_id_server_half = (next_test_id_server_half == UINT16_MAX) ? 0 : next_test_id_server_half + 1;
 
 					snprintf(debug_buff, sizeof(debug_buff), "\r\nDevice received test string: %s", request_scratch.request+TEST_PACKET_STRING_HEAD_OFFSET);
