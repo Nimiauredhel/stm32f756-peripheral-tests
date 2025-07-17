@@ -8,6 +8,9 @@
 #include "db.h"
 #include "client.h"
 
+#define SOCKET_TIMEOUT_SEC (4)
+#define NEW_TEST_ACK_TIMEOUT_SEC (8)
+
 /// @brief Socket handle for both incoming and outgoing communication.
 static int sockfd = 0;
 /// @brief Destination address of the testing server.
@@ -144,6 +147,8 @@ void client_await_response(void)
     bool request_acknowledged = false;
     bool results_received = false;
 
+    uint8_t ack_timeout_counter = 0;
+
     while (!should_terminate && !results_received)
     {
         ssize_t received_bytes = recvfrom(sockfd, client_rx_buffer, sizeof(client_rx_buffer)-1, 0, (struct sockaddr*)&server_tx_addr, &server_tx_addr_len);
@@ -151,7 +156,21 @@ void client_await_response(void)
         if (received_bytes <= 0)
         {
             int err = errno;
-            if (err == ETIMEDOUT || err == EAGAIN || err == EWOULDBLOCK) continue;
+
+            if (err == ETIMEDOUT || err == EAGAIN || err == EWOULDBLOCK)
+            {
+                if (!request_acknowledged)
+                {
+                    if (ack_timeout_counter >= NEW_TEST_ACK_TIMEOUT_SEC)
+                    {
+                        printf("Timed out waiting for test request acknowledgement.\n");
+                        is_paired = false;
+                        break;
+                    }
+
+                    ack_timeout_counter += SOCKET_TIMEOUT_SEC;
+                }
+            }
             perror("Receiving failed");
         }
         else if (client_rx_buffer[0] == TEST_PACKET_START_BYTE_VALUE
@@ -240,7 +259,7 @@ void client_init(void)
 {
     static const struct timeval timeout =
     {
-        .tv_sec = 4,
+        .tv_sec = SOCKET_TIMEOUT_SEC,
         .tv_usec = 0,
     };
     static const int one = 1;

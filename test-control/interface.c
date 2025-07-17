@@ -10,7 +10,7 @@ void interface_init(void)
 void interface_loop(void)
 {
     static bool selection_valid = false;
-    static char numeric_input_buff[4] = {0};
+    static char short_input_buff[4] = {0};
     static char test_str_buff[TEST_PACKET_STR_MAX_LEN] = {0};
     static int numeric_input_int = 0;
     static uint8_t test_str_len = 0;
@@ -28,13 +28,14 @@ void interface_loop(void)
 
         // resetting all values asked from user
         explicit_bzero(test_str_buff, sizeof(test_str_buff));
-        explicit_bzero(numeric_input_buff, sizeof(numeric_input_buff));
+        explicit_bzero(short_input_buff, sizeof(short_input_buff));
 
         test_str_len = 0;
         test_selection_byte = 0;
         test_iterations_byte = 0;
 
-        printf("Please input a test string.\n");
+        printf("\nPlease input a test string (or Ctrl-c to quit).\nInput: ");
+        fflush(stdout);
         fgets(test_str_buff, sizeof(test_str_buff), stdin);
 
         test_str_len = strlen(test_str_buff);
@@ -47,22 +48,37 @@ void interface_loop(void)
             test_str_len -= 1;
         }
 
-        printf("Given input:\n %s\n\n", test_str_buff);
+        printf("Given input: [%s]\n", test_str_buff);
 
-        selection_valid = false;
 
-        while (!selection_valid)
+        for (uint8_t i = 0; i < NUM_POSSIBLE_TESTS; i++)
         {
             if (should_terminate) break;
+            selection_valid = false;
 
-            printf("Select a test combination [TIMER|UART|SPI|I2C|ADC]:\n");
-            fgets(numeric_input_buff, sizeof(numeric_input_buff), stdin);
-            numeric_input_int = atoi(numeric_input_buff);
+            while (!selection_valid && !should_terminate)
+            {
+                printf("Test %s? (y/n): ", test_names[i]);
+                fflush(stdout);
+                fgets(short_input_buff, sizeof(short_input_buff), stdin);
 
-            selection_valid = numeric_input_int > 0 && numeric_input_int <= 31;
+                switch(short_input_buff[0])
+                {
+                    case 'y':
+                    case 'Y':
+                        test_selection_byte |= (uint8_t)1 << (uint8_t)i;
+                        // intentional fallthrough, thx
+                    case 'n':
+                    case 'N':
+                        selection_valid = true;
+                        break;
+                    default:
+                        break;
+                }
+
+                printf("\n");
+            }
         }
-
-        test_selection_byte = (uint8_t)numeric_input_int;
 
         if (should_terminate)
         {
@@ -75,11 +91,13 @@ void interface_loop(void)
         {
             if (should_terminate) break;
 
-            printf("Select number of test iterations (max 255).\n");
-            fgets(numeric_input_buff, sizeof(numeric_input_buff), stdin);
-            numeric_input_int = atoi(numeric_input_buff);
+            printf("Select number of test iterations (1-255): ");
+            fflush(stdout);
+            fgets(short_input_buff, sizeof(short_input_buff), stdin);
+            numeric_input_int = atoi(short_input_buff);
 
             selection_valid = numeric_input_int > 0 && numeric_input_int <= UINT8_MAX;
+            printf("\n");
         }
 
         test_iterations_byte = (uint8_t)numeric_input_int;
