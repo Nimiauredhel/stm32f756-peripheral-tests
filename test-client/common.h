@@ -39,7 +39,7 @@ extern const char test_names[NUM_POSSIBLE_TESTS][8];
 /**
  * @brief Next 16-bit value to be used as the left half of a 32-bit Test ID.
  */
-extern uint16_t next_test_id_client_half;
+extern uint16_t last_test_id_client_half;
 
 /**
  * @brief Global flag indicating reason for program termination.
@@ -75,5 +75,15 @@ float seconds_since_clock(struct timespec start_clock);
  * @brief Gets the current date and time and writes the string into [buff].
  */
 void datetime_str_nonalloc(char *buff, size_t maxlen);
+
+/**
+ * @brief Saves the last used test id (client half) to a file, for persistence between sessions.
+ */
+void save_last_client_test_id(void);
+
+/**
+ * @brief Loads the last used test id (client half) from a file saved in a previous session, if it exists.
+ */
+void load_last_client_test_id(void);
 
 #endif

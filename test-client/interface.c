@@ -4,6 +4,7 @@
 
 void interface_init(void)
 {
+    load_last_client_test_id();
     client_init();
 }
 
@@ -108,8 +109,9 @@ void interface_loop(void)
             break;
         }
 
-        client_fill_test_request_packet(TESTMSG_TEST_NEW_REQUEST, (next_test_id_client_half << 16), test_selection_byte, test_iterations_byte, test_str_len, test_str_buff);
-        next_test_id_client_half = (next_test_id_client_half == UINT16_MAX) ? 0 : next_test_id_client_half + 1;
+        last_test_id_client_half = (last_test_id_client_half == UINT16_MAX) ? 1 : last_test_id_client_half + 1;
+        client_fill_test_request_packet(TESTMSG_TEST_NEW_REQUEST, (last_test_id_client_half << 16), test_selection_byte, test_iterations_byte, test_str_len, test_str_buff);
+        save_last_client_test_id();
 
         if(client_send_test_request_packet())
         {

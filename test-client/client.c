@@ -176,6 +176,9 @@ void client_await_response(void)
         else if (client_rx_buffer[0] == TEST_PACKET_START_BYTE_VALUE
                 && received_bytes >= TEST_MSG_PACKET_SIZE_BYTES)
         {
+            uint32_t stored_id = *(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET);
+            uint32_t received_id = *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET);
+
             switch((TestPacketMsg_t)client_rx_buffer[TEST_PACKET_MSG_BYTE_OFFSET])
             {
             case TESTMSG_TEST_NEW_ACK:
@@ -183,53 +186,57 @@ void client_await_response(void)
                 {
                     break;
                 }
-                else if (*(uint16_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET+2) != *(uint16_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET+2))
+                else if ((stored_id >> 16) != (received_id >> 16))
                 {
-                    printf("Wrong left-half of test ID in received 'new test ack' packet.\n");
+                    printf("Wrong client-half of test ID in received 'new test ack' packet.\n");
                 }
                 else
                 {
-                    *(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET) = *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET);
+                    *(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET) = received_id;
                     db_append_request(latest_request_buffer);
+
                     if (client_rx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] == 0)
                     {
-                        printf("Device REJECTED test request, updated Test ID: %u .\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
+                        printf("Device REJECTED test request, updated Test ID: %u (0x%08X).\n", received_id, received_id);
                         test_over = true;
                         break;
                     }
                     request_acknowledged = true;
-                    printf("Device acknowledged test request, updated Test ID: %u .\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
+                    printf("Device acknowledged test request, updated Test ID: %u (0x%08X).\n", received_id, received_id);
                 }
                 break;
             case TESTMSG_TEST_START_ACK:
-                if (*(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET) != *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET))
+                if (stored_id != received_id)
                 {
                     printf("Received wrong test ID in received 'test start ack' packet.\n");
                 }
                 else
                 {
-                    printf("Device acknowledged test ID %u started.\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
+                    printf("Device acknowledged test ID %u (0x%08X) started.\n", received_id, received_id);
                 }
                 break;
             case TESTMSG_TEST_OVER_RESULTS:
-                if (*(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET) != *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET))
+                if (stored_id != received_id)
                 {
-                    printf("Received wrong test ID in received results packet.\n");
+                    printf("Wrong test ID in received results packet (expected 0x%08X, received 0x%08X).\n", stored_id, received_id);
                 }
                 else
                 {
                     test_over = true;
                     float duration = seconds_since_clock(latest_request_clock);
 
-                    printf("Received test results for test ID %u.\n", *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET));
+                    printf("Received test results for test ID %u (0x%08X).\n", received_id, received_id);
+
+                    uint8_t selection_byte = latest_request_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET];
+                    uint8_t results_byte = client_rx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET];
 
                     for (uint8_t i = 0; i < NUM_POSSIBLE_TESTS; i++)
                     {
-                        if (0x01 & (latest_request_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] >> (uint8_t)i))
+                        if (0x01 & (selection_byte >> (uint8_t)i))
                         {
                             printf("%s Test ", test_names[i]);
 
-                            if (0x01 & (client_rx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] >> (uint8_t)i))
+                            if (0x01 & (results_byte >> (uint8_t)i))
                             {
                                 printf("Passed.\n");
                             }
