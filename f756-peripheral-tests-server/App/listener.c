@@ -29,7 +29,7 @@ static struct netconn *listener_conn = NULL;
 static ip4_addr_t listener_address = {0};
 static uint8_t last_link_up_idx = 0;
 
-static uint16_t next_test_id_server_half = 0;
+static uint16_t next_test_id_server_half = 1;
 static TestRequest_t request_scratch = {0};
 static OutgoingMessage_t message_scratch = {0};
 
@@ -188,8 +188,12 @@ void test_listener_task_loop(void)
 					memcpy(request_scratch.request, listener_pbuf, listener_pbuf_len);
 					netbuf_delete(listener_netbuf);
 
-					*((uint32_t *)request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET) |= (uint32_t)next_test_id_server_half;
-					next_test_id_server_half = (next_test_id_server_half == UINT16_MAX) ? 0 : next_test_id_server_half + 1;
+					uint16_t received_id = *(uint16_t *)(request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET+2);
+					*(uint16_t *)(request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET) = lwip_htons(next_test_id_server_half);
+					uint32_t full_id = *(uint32_t *)(request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET);
+					snprintf(debug_buff, sizeof(debug_buff), "Client ID 0x%04X and Server ID 0x%04X merged into Test ID 0x%08lX.", received_id, lwip_htons(next_test_id_server_half), full_id);
+					serial_debug_enqueue(debug_buff);
+					next_test_id_server_half = (next_test_id_server_half == UINT16_MAX) ? 1 : next_test_id_server_half + 1;
 
 					snprintf(debug_buff, sizeof(debug_buff), "\r\nDevice received test string: %s", request_scratch.request+TEST_PACKET_STRING_HEAD_OFFSET);
 					serial_debug_enqueue(debug_buff);
@@ -205,8 +209,7 @@ void test_listener_task_loop(void)
 					message_scratch.addr = request_scratch.client_addr;
 					message_scratch.port = request_scratch.client_port;
 					message_scratch.message[0] = TEST_PACKET_START_BYTE_VALUE;
-					*(uint32_t *)(message_scratch.message+TEST_PACKET_ID_BYTE_OFFSET)
-					= *(uint32_t *)(request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET);
+					*(uint32_t *)(message_scratch.message+TEST_PACKET_ID_BYTE_OFFSET) = full_id;
 					message_scratch.message[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_TEST_NEW_ACK;
 					message_scratch.message[TEST_PACKET_SELECTION_BYTE_OFFSET] = forwarded ? 1 : 0;
 					message_scratch.message[TEST_PACKET_ITERATIONS_BYTE_OFFSET] = TEST_PACKET_END_BYTE_VALUE;
@@ -217,6 +220,7 @@ void test_listener_task_loop(void)
 					}
 					break;
 				case TESTMSG_PAIRING_PROBE:
+					netbuf_delete(listener_netbuf);
 					serial_debug_enqueue("Received a client probe packet.");
 					// send out a beacon
 					explicit_bzero(&message_scratch, sizeof(message_scratch));
@@ -228,12 +232,14 @@ void test_listener_task_loop(void)
 					osMessageQueuePut(OutboxQueueHandle, &message_scratch, 0, pdMS_TO_TICKS(1000));
 					break;
 				default:
+					netbuf_delete(listener_netbuf);
 					serial_debug_enqueue("Received unexpected packet.");
 					break;
 				}
 		    }
 			else
 			{
+				netbuf_delete(listener_netbuf);
 				serial_debug_enqueue("Received invalid packet.");
 			}
 
