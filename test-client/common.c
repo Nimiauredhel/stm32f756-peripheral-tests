@@ -62,7 +62,7 @@ void save_last_client_test_id(void)
 {
     FILE *file;
 
-    printf("Saving test ID %04x____ to file...\n", last_test_id_client_half);
+    printf("Saving test ID 0x%04x to file...\n", last_test_id_client_half);
 
     file = fopen(PERSISTENCE_FILE_PATH, "wb");
 
@@ -76,7 +76,7 @@ void save_last_client_test_id(void)
 
     if (write_count == 1)
     {
-        printf("Saved test ID %04x____ to file.\n", last_test_id_client_half);
+        printf("Saved test ID 0x%04x to file.\n", last_test_id_client_half);
     }
     else
     {
@@ -88,12 +88,12 @@ void save_last_client_test_id(void)
 
 void load_last_client_test_id(void)
 {
-    static const char defaulting_str[] = "Defaulting last test ID to 0x0000____.\n";
+    static const char defaulting_str[] = "Defaulting last test ID to 0x0001.\n";
 
     FILE *file = NULL;
     int error_code = 0;
     size_t read_count = 0;
-    uint16_t id = 0;
+    uint16_t id = 1;
 
     printf("Loading last saved test ID...\n");
 
@@ -120,7 +120,7 @@ void load_last_client_test_id(void)
 
         if (read_count == 1)
         {
-            printf("Loaded last test ID: 0x%04X____.\n", id);
+            printf("Loaded last test ID: 0x%04X.\n", id);
         }
         else
         {
