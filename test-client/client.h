@@ -25,7 +25,7 @@ void client_fill_test_message_packet(TestPacketMsg_t msg, uint32_t test_id);
 /**
  * @brief Prepares a test request packet in the outgoing packet buffer.
  */
-void client_fill_test_request_packet(TestPacketMsg_t msg, uint32_t test_id, uint8_t test_selection, uint8_t iterations, uint8_t str_len, char *str_ptr);
+void client_fill_test_request_packet(TestPacketMsg_t msg, uint16_t client_test_id, uint8_t test_selection, uint8_t iterations, uint8_t str_len, char *str_ptr);
 /**
  * @brief Attempts to pair with a compatible testing server.
  */

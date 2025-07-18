@@ -176,8 +176,10 @@ void client_await_response(void)
         else if (client_rx_buffer[0] == TEST_PACKET_START_BYTE_VALUE
                 && received_bytes >= TEST_MSG_PACKET_SIZE_BYTES)
         {
-            uint32_t stored_id = *(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET);
-            uint32_t received_id = *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET);
+            uint16_t stored_id_client = *(uint16_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET+2);
+            uint16_t received_id_client = *(uint16_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET+2);
+            uint32_t stored_id_full = *(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET);
+            uint32_t received_id_full = *(uint32_t *)(client_rx_buffer+TEST_PACKET_ID_BYTE_OFFSET);
 
             switch((TestPacketMsg_t)client_rx_buffer[TEST_PACKET_MSG_BYTE_OFFSET])
             {
@@ -186,46 +188,46 @@ void client_await_response(void)
                 {
                     break;
                 }
-                else if ((stored_id >> 16) != (received_id >> 16))
+                else if (stored_id_client != received_id_client)
                 {
                     printf("Wrong client-half of test ID in received 'new test ack' packet.\n");
                 }
                 else
                 {
-                    *(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET) = received_id;
+                    *(uint32_t *)(latest_request_buffer+TEST_PACKET_ID_BYTE_OFFSET) = received_id_full;
                     db_append_request(latest_request_buffer);
 
                     if (client_rx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] == 0)
                     {
-                        printf("Device REJECTED test request, updated Test ID: %u (0x%08X).\n", received_id, received_id);
+                        printf("Device REJECTED test request, updated Test ID: %u (0x%08X).\n", received_id_full, received_id_full);
                         test_over = true;
                         break;
                     }
                     request_acknowledged = true;
-                    printf("Device acknowledged test request, updated Test ID: %u (0x%08X).\n", received_id, received_id);
+                    printf("Device acknowledged test request, updated Test ID: %u (0x%08X).\n", received_id_full, received_id_full);
                 }
                 break;
             case TESTMSG_TEST_START_ACK:
-                if (stored_id != received_id)
+                if (stored_id_full != received_id_full)
                 {
                     printf("Received wrong test ID in received 'test start ack' packet.\n");
                 }
                 else
                 {
-                    printf("Device acknowledged test ID %u (0x%08X) started.\n", received_id, received_id);
+                    printf("Device acknowledged test ID %u (0x%08X) started.\n", received_id_full, received_id_full);
                 }
                 break;
             case TESTMSG_TEST_OVER_RESULTS:
-                if (stored_id != received_id)
+                if (stored_id_full != received_id_full)
                 {
-                    printf("Wrong test ID in received results packet (expected 0x%08X, received 0x%08X).\n", stored_id, received_id);
+                    printf("Wrong test ID in received results packet (expected 0x%08X, received 0x%08X).\n", stored_id_full, received_id_full);
                 }
                 else
                 {
                     test_over = true;
                     float duration = seconds_since_clock(latest_request_clock);
 
-                    printf("Received test results for test ID %u (0x%08X).\n", received_id, received_id);
+                    printf("Received test results for test ID %u (0x%08X).\n", received_id_full, received_id_full);
 
                     uint8_t selection_byte = latest_request_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET];
                     uint8_t results_byte = client_rx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET];
@@ -327,17 +329,17 @@ void client_fill_test_message_packet(TestPacketMsg_t msg, uint32_t test_id)
     explicit_bzero(client_tx_buffer, TEST_REQUEST_PACKET_MAX_SIZE_BYTES);
     client_tx_buffer[0] = TEST_PACKET_START_BYTE_VALUE;
     client_tx_buffer[TEST_PACKET_MSG_BYTE_OFFSET] = msg;
-    *(uint32_t *)(client_tx_buffer+TEST_PACKET_ID_BYTE_OFFSET) = test_id;
+    *(uint32_t *)(client_tx_buffer+TEST_PACKET_ID_BYTE_OFFSET) = htonl(test_id);
     client_tx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] = 0;
     client_tx_buffer[TEST_PACKET_ITERATIONS_BYTE_OFFSET] = TEST_PACKET_END_BYTE_VALUE;
 }
 
-void client_fill_test_request_packet(TestPacketMsg_t msg, uint32_t test_id, uint8_t test_selection, uint8_t iterations, uint8_t str_len, char *str_ptr)
+void client_fill_test_request_packet(TestPacketMsg_t msg, uint16_t client_test_id, uint8_t test_selection, uint8_t iterations, uint8_t str_len, char *str_ptr)
 {
     explicit_bzero(client_tx_buffer, TEST_REQUEST_PACKET_MAX_SIZE_BYTES);
     client_tx_buffer[0] = TEST_PACKET_START_BYTE_VALUE;
     client_tx_buffer[TEST_PACKET_MSG_BYTE_OFFSET] = msg;
-    *(uint32_t *)(client_tx_buffer+TEST_PACKET_ID_BYTE_OFFSET) = test_id;
+    *(uint16_t *)(client_tx_buffer+TEST_PACKET_ID_BYTE_OFFSET+2) = htons(client_test_id);
     client_tx_buffer[TEST_PACKET_SELECTION_BYTE_OFFSET] = test_selection;
     client_tx_buffer[TEST_PACKET_ITERATIONS_BYTE_OFFSET] = iterations;
 

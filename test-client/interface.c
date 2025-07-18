@@ -110,7 +110,7 @@ void interface_loop(void)
         }
 
         last_test_id_client_half = (last_test_id_client_half == UINT16_MAX) ? 1 : last_test_id_client_half + 1;
-        client_fill_test_request_packet(TESTMSG_TEST_NEW_REQUEST, (last_test_id_client_half << 16), test_selection_byte, test_iterations_byte, test_str_len, test_str_buff);
+        client_fill_test_request_packet(TESTMSG_TEST_NEW_REQUEST, last_test_id_client_half, test_selection_byte, test_iterations_byte, test_str_len, test_str_buff);
         save_last_client_test_id();
 
         if(client_send_test_request_packet())
