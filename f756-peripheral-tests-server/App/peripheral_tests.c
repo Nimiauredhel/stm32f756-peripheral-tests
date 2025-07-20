@@ -216,16 +216,28 @@ static bool test_i2c(void)
 	bzero(i2c_rx_buff_1, sizeof(i2c_rx_buff_1));
 	bzero(i2c_rx_buff_2, sizeof(i2c_rx_buff_2));
 
-	HAL_I2C_Slave_Receive_DMA(&hi2c1, (uint8_t *)i2c_rx_buff_1, test_reference.test_string_len);
-	HAL_I2C_Master_Transmit(&hi2c2, hi2c1.Init.OwnAddress1, (uint8_t *)test_reference.test_string_buff, test_reference.test_string_len, TEST_TIMEOUT_TICKS);
+	if (HAL_OK != HAL_I2C_Slave_Receive_DMA(&hi2c1, (uint8_t *)i2c_rx_buff_1, test_reference.test_string_len)
+			|| HAL_OK != HAL_I2C_Master_Transmit(&hi2c2, hi2c1.Init.OwnAddress1, (uint8_t *)test_reference.test_string_buff, test_reference.test_string_len, TEST_TIMEOUT_TICKS))
+	{
+		HAL_DMA_Abort(hi2c1.hdmarx);
+		return false;
+	}
+
 	vTaskDelay(TEST_GAP_TICKS);
+	HAL_DMA_Abort(hi2c1.hdmarx);
 
 	if (HAL_CRC_Calculate(&hcrc, i2c_rx_buff_1, test_reference.test_string_len)
 				!= test_reference.test_string_crc) return false;
 
-	HAL_I2C_Slave_Transmit_DMA(&hi2c1, (uint8_t *)i2c_rx_buff_1, test_reference.test_string_len);
-	HAL_I2C_Master_Receive(&hi2c2, hi2c1.Init.OwnAddress1, (uint8_t *)i2c_rx_buff_2, test_reference.test_string_len, TEST_TIMEOUT_TICKS);
+	if (HAL_OK != HAL_I2C_Slave_Transmit_DMA(&hi2c1, (uint8_t *)i2c_rx_buff_1, test_reference.test_string_len)
+			|| HAL_OK != HAL_I2C_Master_Receive(&hi2c2, hi2c1.Init.OwnAddress1, (uint8_t *)i2c_rx_buff_2, test_reference.test_string_len, TEST_TIMEOUT_TICKS))
+	{
+		HAL_DMA_Abort(hi2c1.hdmatx);
+		return false;
+	}
+
 	vTaskDelay(TEST_GAP_TICKS);
+	HAL_DMA_Abort(hi2c1.hdmatx);
 
 	return (HAL_CRC_Calculate(&hcrc, i2c_rx_buff_2, test_reference.test_string_len)
 					== test_reference.test_string_crc);
