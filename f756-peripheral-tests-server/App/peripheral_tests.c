@@ -250,7 +250,8 @@ static bool test_adc(void)
 
 	uint32_t adc_val = 0;
 
-	HAL_ADC_Start_DMA(&hadc1, &adc_val, 1);
+	if (HAL_OK != HAL_ADC_Start_DMA(&hadc1, &adc_val, 1)) return false;
+
 	HAL_ADC_PollForConversion(&hadc1, TEST_TIMEOUT_TICKS);
 	HAL_ADC_Stop_DMA(&hadc1);
 
