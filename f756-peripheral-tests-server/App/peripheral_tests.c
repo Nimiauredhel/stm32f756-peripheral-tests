@@ -23,6 +23,11 @@
 static bool test_uart(const char *test_string, const uint8_t len);
 /**
  * @brief The Timer peripheral test implementation.
+ * @details
+ * This function tests the Timer 1 Input Capture and PWM Generation capabilities,
+ * using channel 2 and channel 3, respectively.
+ * A series of PWM signals with different duty cycles are generated on channel 3,
+ * and Channel 2 is expected to measure those duty cycle values within a reasonable tolerance.
  * @param [in] *test_string The string used by the current peripheral test.
  * @param [in] len The length of the string used by the current peripheral test.
  */
@@ -71,23 +76,35 @@ TestData_t test_defs[NUM_POSSIBLE_TESTS] =
 
 static bool test_timer(const char *test_string, const uint8_t len)
 {
-	static const uint8_t reps = 8;
+	static const uint32_t capture_error_tolerance = 10;
+	static const uint16_t capture_delay_ticks = pdMS_TO_TICKS(50);
+	static const uint8_t duty_variation_count = 8;
 
-	for (int i = 0; i < reps; i++)
+	uint32_t generated_duty_cycle;
+	uint32_t captured_duty_cycle;
+	uint32_t capture_error_amount;
+
+	for (int i = 0; i < duty_variation_count; i++)
 	{
-		uint32_t duty_val = htim1.Instance->ARR / pow(2, i+1);
-		htim1.Instance->CCR3 = duty_val;
-		HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-		HAL_TIM_IC_Start(&htim1, TIM_CHANNEL_2);
-		vTaskDelay(pdMS_TO_TICKS(50));
+		generated_duty_cycle = htim1.Instance->ARR / pow(2, i+1);
+		htim1.Instance->CCR3 = generated_duty_cycle;
+		if (HAL_OK != HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3)
+			|| HAL_OK != HAL_TIM_IC_Start(&htim1, TIM_CHANNEL_2))
+		{
+			HAL_TIM_IC_Stop(&htim1, TIM_CHANNEL_2);
+			HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
+			return false;
+		}
+		vTaskDelay(capture_delay_ticks);
 		HAL_TIM_IC_Stop(&htim1, TIM_CHANNEL_2);
 		HAL_TIM_PWM_Stop(&htim1, TIM_CHANNEL_3);
-		uint32_t ic_result = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2);
+		captured_duty_cycle = HAL_TIM_ReadCapturedValue(&htim1, TIM_CHANNEL_2);
 
-		uint32_t margin = ic_result > duty_val ? ic_result - duty_val
-				: duty_val - ic_result;
+		capture_error_amount = captured_duty_cycle > generated_duty_cycle
+				? captured_duty_cycle - generated_duty_cycle
+				: generated_duty_cycle - captured_duty_cycle;
 
-		if (margin > 10) return false;
+		if (capture_error_amount > capture_error_tolerance) return false;
 	}
 
 	return true;
