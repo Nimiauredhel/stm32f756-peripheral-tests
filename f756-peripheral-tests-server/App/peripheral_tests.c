@@ -181,16 +181,28 @@ static bool test_spi(void)
 	bzero(spi_rx_buff_1, sizeof(spi_rx_buff_1));
 	bzero(spi_rx_buff_2, sizeof(spi_rx_buff_2));
 
-	HAL_SPI_Receive_DMA(&hspi5, (uint8_t *)spi_rx_buff_1, test_reference.test_string_len);
-	HAL_SPI_Transmit(&hspi3, (uint8_t *)test_reference.test_string_buff, test_reference.test_string_len, TEST_TIMEOUT_TICKS);
+	if (HAL_OK != HAL_SPI_Receive_DMA(&hspi5, (uint8_t *)spi_rx_buff_1, test_reference.test_string_len)
+			|| HAL_OK != HAL_SPI_Transmit(&hspi3, (uint8_t *)test_reference.test_string_buff, test_reference.test_string_len, TEST_TIMEOUT_TICKS))
+	{
+		HAL_SPI_DMAStop(&hspi5);
+		return false;
+	}
+
 	vTaskDelay(TEST_GAP_TICKS);
+	HAL_SPI_DMAStop(&hspi5);
 
 	if (HAL_CRC_Calculate(&hcrc, spi_rx_buff_1, test_reference.test_string_len)
 			!= test_reference.test_string_crc) return false;
 
-	HAL_SPI_TransmitReceive_DMA(&hspi5, (uint8_t *)spi_rx_buff_1, (uint8_t *)spi_rx_buff_dummy, test_reference.test_string_len);
-	HAL_SPI_TransmitReceive(&hspi3, (uint8_t *)spi_tx_buff_dummy, (uint8_t *)spi_rx_buff_2, test_reference.test_string_len, TEST_TIMEOUT_TICKS);
+	if (HAL_OK != HAL_SPI_TransmitReceive_DMA(&hspi5, (uint8_t *)spi_rx_buff_1, (uint8_t *)spi_rx_buff_dummy, test_reference.test_string_len)
+			|| HAL_OK != HAL_SPI_TransmitReceive(&hspi3, (uint8_t *)spi_tx_buff_dummy, (uint8_t *)spi_rx_buff_2, test_reference.test_string_len, TEST_TIMEOUT_TICKS))
+	{
+		HAL_SPI_DMAStop(&hspi5);
+		return false;
+	}
+
 	vTaskDelay(TEST_GAP_TICKS);
+	HAL_SPI_DMAStop(&hspi5);
 
 	return (HAL_CRC_Calculate(&hcrc, spi_rx_buff_2, test_reference.test_string_len)
 				== test_reference.test_string_crc);
