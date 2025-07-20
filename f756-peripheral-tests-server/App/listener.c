@@ -36,6 +36,89 @@ static OutgoingMessage_t message_scratch = {0};
 static char debug_buff[SERIAL_DEBUG_MAX_LEN] = {0};
 
 /**
+ * @brief Broadcasts a @ref TESTMSG_PAIRING_BEACON packet to the network,
+ * alerting clients to the server's existence.
+ */
+static void broadcast_server_presence(void)
+{
+	explicit_bzero(&message_scratch, sizeof(message_scratch));
+	message_scratch.port = CLIENT_PORT;
+	message_scratch.addr = *IP4_ADDR_BROADCAST;
+	message_scratch.message[0] = TEST_PACKET_START_BYTE_VALUE;
+	message_scratch.message[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_PAIRING_BEACON;
+	message_scratch.message[TEST_PACKET_ID_BYTE_OFFSET] = TEST_PACKET_END_BYTE_VALUE;
+	osMessageQueuePut(OutboxQueueHandle, &message_scratch, 0, pdMS_TO_TICKS(1000));
+}
+
+/**
+ * @brief Sends a confirmation matching the last "new test request".
+ * Weakness: relies on the validity of @ref request_scratch.
+ * @param [in] accepted Indicates whether the test request was accepted or denied
+ */
+static void send_new_test_ack(bool accepted)
+{
+	static const uint8_t repeats = 4;
+
+	explicit_bzero(&message_scratch, sizeof(message_scratch));
+	message_scratch.addr = request_scratch.client_addr;
+	message_scratch.port = request_scratch.client_port;
+	message_scratch.message[0] = TEST_PACKET_START_BYTE_VALUE;
+	*(uint32_t *)(message_scratch.message+TEST_PACKET_ID_BYTE_OFFSET) =
+	*(uint32_t *)(request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET);
+	message_scratch.message[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_TEST_NEW_ACK;
+	message_scratch.message[TEST_PACKET_SELECTION_BYTE_OFFSET] = accepted ? 1 : 0;
+	message_scratch.message[TEST_PACKET_ITERATIONS_BYTE_OFFSET] = TEST_PACKET_END_BYTE_VALUE;
+
+	for (uint8_t i = 0; i < repeats; i++)
+	{
+		osMessageQueuePut(OutboxQueueHandle, &message_scratch, 0, pdMS_TO_TICKS(1000));
+	}
+}
+
+/**
+ * @brief Analyzes an incoming test request,
+ * and attempts forwarding it to the test queue.
+ * Weakness: relies on the validity of @ref request_scratch.
+ * @retval true The request was accepted and forwarded
+ * @retval false The request was denied or processing failed
+ */
+bool process_new_test_request()
+{
+	// merge client and server test IDs and update scratch buffer
+	uint16_t received_id = *(uint16_t *)(request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET+2);
+	*(uint16_t *)(request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET) = lwip_htons(next_test_id_server_half);
+	uint32_t full_id = *(uint32_t *)(request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET);
+
+	snprintf(debug_buff, sizeof(debug_buff), "Client ID 0x%04X and Server ID 0x%04X merged into Test ID 0x%08lX.", received_id, lwip_htons(next_test_id_server_half), full_id);
+	serial_debug_enqueue(debug_buff);
+
+	// increment server test ID
+	next_test_id_server_half = (next_test_id_server_half == UINT16_MAX) ? 1 : next_test_id_server_half + 1;
+
+	snprintf(debug_buff, sizeof(debug_buff), "\r\nDevice received test string: %s", request_scratch.request+TEST_PACKET_STRING_HEAD_OFFSET);
+	serial_debug_enqueue(debug_buff);
+
+	// forward request to test queue
+	return (osOK == osMessageQueuePut(TestQueueHandle, &request_scratch, 0, pdMS_TO_TICKS(1000)));
+}
+
+/**
+ * @brief Handles socket reception timeout.
+ * Currently only measures it for periodic debug printing.
+ */
+void handle_recv_timeout(void)
+{
+	recv_idle_counter_ms += recv_timeout_ms;
+
+	if (recv_idle_counter_ms >= recv_idle_debug_ms
+		&& recv_idle_counter_ms % recv_idle_debug_ms == 0)
+	{
+		snprintf(debug_buff, sizeof(debug_buff), "Listener idle for %lu seconds.", recv_idle_counter_ms/1000);
+		serial_debug_enqueue(debug_buff);
+	}
+}
+
+/**
  * @brief Checks whether the ethernet link status changed since the local status index was last updated.
  * @retval true Link status changed since the status idx was last updated.
  * @retval false No change since the status idx was last updated.
@@ -186,50 +269,22 @@ void test_listener_task_loop(void)
 					request_scratch.client_addr = listener_netbuf->addr;
 					request_scratch.client_port = listener_netbuf->port;
 					memcpy(request_scratch.request, listener_pbuf, listener_pbuf_len);
+
 					netbuf_delete(listener_netbuf);
 
-					uint16_t received_id = *(uint16_t *)(request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET+2);
-					*(uint16_t *)(request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET) = lwip_htons(next_test_id_server_half);
-					uint32_t full_id = *(uint32_t *)(request_scratch.request+TEST_PACKET_ID_BYTE_OFFSET);
-					snprintf(debug_buff, sizeof(debug_buff), "Client ID 0x%04X and Server ID 0x%04X merged into Test ID 0x%08lX.", received_id, lwip_htons(next_test_id_server_half), full_id);
-					serial_debug_enqueue(debug_buff);
-					next_test_id_server_half = (next_test_id_server_half == UINT16_MAX) ? 1 : next_test_id_server_half + 1;
+					bool accepted = process_new_test_request();
 
-					snprintf(debug_buff, sizeof(debug_buff), "\r\nDevice received test string: %s", request_scratch.request+TEST_PACKET_STRING_HEAD_OFFSET);
-					serial_debug_enqueue(debug_buff);
-
-					// forward request to test queue
-					bool forwarded = (osOK == osMessageQueuePut(TestQueueHandle, &request_scratch, 0, pdMS_TO_TICKS(1000)));
-
-					snprintf(debug_buff, sizeof(debug_buff), "Test request %sforwarded to queue.", forwarded ? "" : "NOT ");
+					snprintf(debug_buff, sizeof(debug_buff), "Test request %sforwarded to queue.", accepted ? "" : "NOT ");
 					serial_debug_enqueue(debug_buff);
 
 					// confirm reception
-					explicit_bzero(&message_scratch, sizeof(message_scratch));
-					message_scratch.addr = request_scratch.client_addr;
-					message_scratch.port = request_scratch.client_port;
-					message_scratch.message[0] = TEST_PACKET_START_BYTE_VALUE;
-					*(uint32_t *)(message_scratch.message+TEST_PACKET_ID_BYTE_OFFSET) = full_id;
-					message_scratch.message[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_TEST_NEW_ACK;
-					message_scratch.message[TEST_PACKET_SELECTION_BYTE_OFFSET] = forwarded ? 1 : 0;
-					message_scratch.message[TEST_PACKET_ITERATIONS_BYTE_OFFSET] = TEST_PACKET_END_BYTE_VALUE;
-
-					for (uint8_t i = 0; i < 4; i++)
-					{
-						osMessageQueuePut(OutboxQueueHandle, &message_scratch, 0, pdMS_TO_TICKS(1000));
-					}
+					send_new_test_ack(accepted);
 					break;
 				case TESTMSG_PAIRING_PROBE:
 					netbuf_delete(listener_netbuf);
 					serial_debug_enqueue("Received a client probe packet.");
 					// send out a beacon
-					explicit_bzero(&message_scratch, sizeof(message_scratch));
-					message_scratch.port = CLIENT_PORT;
-					message_scratch.addr = *IP4_ADDR_BROADCAST;
-					message_scratch.message[0] = TEST_PACKET_START_BYTE_VALUE;
-					message_scratch.message[TEST_PACKET_MSG_BYTE_OFFSET] = TESTMSG_PAIRING_BEACON;
-					message_scratch.message[TEST_PACKET_ID_BYTE_OFFSET] = TEST_PACKET_END_BYTE_VALUE;
-					osMessageQueuePut(OutboxQueueHandle, &message_scratch, 0, pdMS_TO_TICKS(1000));
+					broadcast_server_presence();
 					break;
 				default:
 					netbuf_delete(listener_netbuf);
@@ -246,14 +301,7 @@ void test_listener_task_loop(void)
 			serial_debug_enqueue("Listener awaiting requests.");
 			break;
 		case ERR_TIMEOUT:
-			recv_idle_counter_ms += recv_timeout_ms;
-
-			if (recv_idle_counter_ms >= recv_idle_debug_ms
-				&& recv_idle_counter_ms % recv_idle_debug_ms == 0)
-			{
-				snprintf(debug_buff, sizeof(debug_buff), "Listener idle for %lu seconds.", recv_idle_counter_ms/1000);
-				serial_debug_enqueue(debug_buff);
-			}
+			handle_recv_timeout();
 			break;
 		default:
 			snprintf(debug_buff, sizeof(debug_buff), "Listener recv() error: %s", lwip_strerr(recv_ret));
