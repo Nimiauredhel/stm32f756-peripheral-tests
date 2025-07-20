@@ -17,6 +17,13 @@
 
 /**
  * @brief The UART peripheral test implementation.
+ * @details
+ * This function transfers data between several buffers
+ * using peripherals UART2 and UART6, in both directions,
+ * with and without DMA. The transfer results is compared
+ * to the reference string using CRC.
+ * @retval true Test Success
+ * @retval false Test Failure
  */
 static bool test_uart(void);
 /**
@@ -26,18 +33,40 @@ static bool test_uart(void);
  * using channel 2 and channel 3, respectively.
  * A series of PWM signals with different duty cycles are generated on channel 3,
  * and Channel 2 is expected to measure those duty cycle values within a reasonable tolerance.
+ * @retval true Test Success
+ * @retval false Test Failure
  */
 static bool test_timer(void);
 /**
  * @brief The SPI peripheral test implementation.
+ * @details
+ * This function transfers data between several buffers
+ * using peripherals SPI3 and SPI5, in both directions,
+ * with and without DMA. The transfer results is compared
+ * to the reference string using CRC.
+ * @retval true Test Success
+ * @retval false Test Failure
  */
 static bool test_spi(void);
 /**
  * @brief The I2C peripheral test implementation.
+ * @details
+ * This function transfers data between several buffers
+ * using peripherals I2C1 and I2C2, in both directions,
+ * with and without DMA. The transfer results is compared
+ * to the reference string using CRC.
+ * @retval true Test Success
+ * @retval false Test Failure
  */
 static bool test_i2c(void);
 /**
  * @brief The ADC peripheral test implementation.
+ * @details
+ * This function evalutes the reading from peripheral ADC1,
+ * which is connected directly to 3.3v output and expected
+ * to approximate the maximal reading (4095).
+ * @retval true Test Success
+ * @retval false Test Failure
  */
 static bool test_adc(void);
 
@@ -115,16 +144,28 @@ static bool test_uart(void)
 	bzero(uart_test_rx_buff_1, sizeof(uart_test_rx_buff_1));
 	bzero(uart_test_rx_buff_2, sizeof(uart_test_rx_buff_2));
 
-	HAL_UART_Receive_DMA(&huart6, (uint8_t *)uart_test_rx_buff_1, test_reference.test_string_len);
-	HAL_UART_Transmit(&huart2, (uint8_t *)test_reference.test_string_buff, test_reference.test_string_len, TEST_TIMEOUT_TICKS);
+	if(HAL_OK != HAL_UART_Receive_DMA(&huart6, (uint8_t *)uart_test_rx_buff_1, test_reference.test_string_len)
+			|| HAL_OK != HAL_UART_Transmit(&huart2, (uint8_t *)test_reference.test_string_buff, test_reference.test_string_len, TEST_TIMEOUT_TICKS))
+	{
+		HAL_UART_DMAStop(&huart6);
+		return false;
+	}
+
 	vTaskDelay(TEST_GAP_TICKS);
+	HAL_UART_DMAStop(&huart6);
 
 	if (HAL_CRC_Calculate(&hcrc, uart_test_rx_buff_1, test_reference.test_string_len)
 		!= test_reference.test_string_crc) return false;
 
-	HAL_UART_Receive_DMA(&huart2, (uint8_t *)uart_test_rx_buff_2, test_reference.test_string_len);
-	HAL_UART_Transmit(&huart6, (uint8_t *)uart_test_rx_buff_1, test_reference.test_string_len, TEST_TIMEOUT_TICKS);
+	if (HAL_OK != HAL_UART_Receive_DMA(&huart2, (uint8_t *)uart_test_rx_buff_2, test_reference.test_string_len)
+			|| HAL_OK != HAL_UART_Transmit(&huart6, (uint8_t *)uart_test_rx_buff_1, test_reference.test_string_len, TEST_TIMEOUT_TICKS))
+	{
+		HAL_UART_DMAStop(&huart2);
+		return false;
+	}
+
 	vTaskDelay(TEST_GAP_TICKS);
+	HAL_UART_DMAStop(&huart2);
 
 	return (HAL_CRC_Calculate(&hcrc, uart_test_rx_buff_2, test_reference.test_string_len)
 			== test_reference.test_string_crc);
