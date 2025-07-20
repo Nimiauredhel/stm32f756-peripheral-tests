@@ -23,7 +23,7 @@
 #define TEST_GAP_TICKS (pdMS_TO_TICKS(500))
 
 /**
- * @brief Type of variables representing the state of a peripheral under test.
+ * @brief Type of variables representing the current state of a test unit.
  */
 typedef volatile enum PeripheralTestState
 {
@@ -35,42 +35,56 @@ typedef volatile enum PeripheralTestState
 } PeripheralTestState_t;
 
 /**
- * @brief Type of variables holding data used by a variable under test.
+ * @brief Data structure holding reference variables used to evaluate currently running tests.
  */
-typedef struct TestData
+typedef struct TestReferenceData
+{
+	/// @brief The test string used by the currently running peripheral tests.
+	char test_string_buff[TEST_PACKET_STR_MAX_LEN];
+	/// @brief Reference CRC value of test string used by the currently running peripheral tests.
+	uint32_t test_string_crc;
+	/// @brief Length of the test string used by the currently running peripheral tests.
+	uint8_t test_string_len;
+} TestReferenceData_t;
+
+/**
+ * @brief Type of variables holding static data used by a specific test.
+ */
+typedef struct TestUnitDefinition
 {
 	const char name[16];
-	volatile PeripheralTestState_t state;
+	bool (*func)(void);
+} TestUnitDefinition_t;
+
+/**
+ * @brief Type of variables holding dynamic data used by a specific test.
+ */
+typedef struct TestUnitInstance
+{
+	volatile PeripheralTestState_t state : 8;
 	volatile uint8_t iterations;
-	bool (*func)(const char*, const uint8_t);
-} TestData_t;
+} TestUnitInstance_t;
 
 /**
- * @brief Length of the test string used by the currently running peripheral tests.
- * TODO: refactor into struct
+ * @brief Array of variables holding static data about test units.
  */
-extern volatile uint8_t test_string_len;
+extern const TestUnitDefinition_t test_definitions[NUM_POSSIBLE_TESTS];
 /**
- * @brief The test string used by the currently running peripheral tests.
- * TODO: refactor into struct
+ * @brief Array of variables holding the dynamic state of test units.
  */
-extern char test_string_buff[TEST_PACKET_STR_MAX_LEN];
-/**
- * @brief Reference CRC value of test string used by the currently running peripheral tests.
- * TODO: refactor into struct
- */
-extern uint32_t test_string_crc;
+extern TestUnitInstance_t test_instances[NUM_POSSIBLE_TESTS];
 
-/**
- * @brief Array of variables holding up to date information about the peripherals under test.
- * TODO: refactor into struct, formalize access
- */
-extern TestData_t test_defs[NUM_POSSIBLE_TESTS];
+void test_reference_prepare(char *test_str, uint8_t test_str_len);
 
 /**
  * @brief A generic loop used by the tasks running individual peripheral tests.
- * @param [in] *def The specific data used by the task to run individual tests.
+ * @details
+ * This generic loop manages the test instance associated with the given index.
+ * When it detects a state change to PENDING, it progresses the state to BUSY.
+ * It then runs the bespoke test implementation, whose return value is finally
+ * assigned to the state field when finished.
+ * @param [in] test_index Index key to the data used by the task to run tests.
  */
-void test_task_loop(TestData_t *def);
+void test_task_loop(uint8_t test_index);
 
 #endif /* INC_PERIPHERAL_TESTS_H_ */

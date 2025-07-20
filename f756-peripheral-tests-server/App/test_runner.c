@@ -44,10 +44,7 @@ void test_runner_task_loop(void)
 			/**
 			 * Preparing the test reference variables.
 			 */
-			test_string_len = current_test.request[TEST_PACKET_STRING_LEN_OFFSET];
-			explicit_bzero(test_string_buff, sizeof(test_string_buff));
-			strncpy(test_string_buff, (char *)(current_test.request+TEST_PACKET_STRING_HEAD_OFFSET), test_string_len);
-			test_string_crc = HAL_CRC_Calculate(&hcrc, test_string_buff, test_string_len);
+			test_reference_prepare(current_test.request+TEST_PACKET_STRING_HEAD_OFFSET, current_test.request[TEST_PACKET_STRING_LEN_OFFSET]);
 
 			uint8_t test_selection_byte = current_test.request[TEST_PACKET_SELECTION_BYTE_OFFSET];
 			uint8_t ordered_test_count = 0;
@@ -62,15 +59,15 @@ void test_runner_task_loop(void)
 				if (0x01 & (test_selection_byte >> (uint8_t)i))
 				{
 					ordered_test_count++;
-					test_defs[i].iterations = current_test.request[TEST_PACKET_ITERATIONS_BYTE_OFFSET];
-					test_defs[i].state = TESTSTATE_PENDING;
+					test_instances[i].iterations = current_test.request[TEST_PACKET_ITERATIONS_BYTE_OFFSET];
+					test_instances[i].state = TESTSTATE_PENDING;
 
-					snprintf(debug_buff, sizeof(debug_buff), "%s Test Ordered.", test_defs[i].name);
+					snprintf(debug_buff, sizeof(debug_buff), "%s Test Ordered.", test_definitions[i].name);
 					serial_debug_enqueue(debug_buff);
 				}
 				else
 				{
-					test_defs[i].state = TESTSTATE_READY;
+					test_instances[i].state = TESTSTATE_READY;
 				}
 			}
 
@@ -101,20 +98,20 @@ void test_runner_task_loop(void)
 
 				for (uint8_t i = 0; i < NUM_POSSIBLE_TESTS; i++)
 				{
-				switch(test_defs[i].state)
+				switch(test_instances[i].state)
 				{
 				case TESTSTATE_SUCCESS:
 					  message_scratch.message[TEST_PACKET_SELECTION_BYTE_OFFSET]
 						  |= (1 << (uint8_t)i);
-					  snprintf(debug_buff, sizeof(debug_buff), "%s Test Success.", test_defs[i].name);
+					  snprintf(debug_buff, sizeof(debug_buff), "%s Test Success.", test_definitions[i].name);
 					  serial_debug_enqueue(debug_buff);
-					  test_defs[i].state = TESTSTATE_READY;
+					  test_instances[i].state = TESTSTATE_READY;
 					  completed_tests++;
 					  break;
 				case TESTSTATE_FAILURE:
-					  snprintf(debug_buff, sizeof(debug_buff), "%s Test Failure.", test_defs[i].name);
+					  snprintf(debug_buff, sizeof(debug_buff), "%s Test Failure.", test_definitions[i].name);
 					  serial_debug_enqueue(debug_buff);
-					  test_defs[i].state = TESTSTATE_READY;
+					  test_instances[i].state = TESTSTATE_READY;
 					  completed_tests++;
 					  break;
 				default:

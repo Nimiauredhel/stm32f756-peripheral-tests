@@ -354,7 +354,7 @@ void StartUARTTestTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  test_task_loop(&test_defs[TESTIDX_UART]);
+	  test_task_loop(TESTIDX_UART);
   }
   /* USER CODE END StartUARTTestTask */
 }
@@ -372,7 +372,7 @@ void StartI2CTestTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  test_task_loop(&test_defs[TESTIDX_I2C]);
+	  test_task_loop(TESTIDX_I2C);
   }
   /* USER CODE END StartI2CTestTask */
 }
@@ -390,7 +390,7 @@ void StartSPITestTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  test_task_loop(&test_defs[TESTIDX_SPI]);
+	  test_task_loop(TESTIDX_SPI);
   }
   /* USER CODE END StartSPITestTask */
 }
@@ -408,7 +408,7 @@ void StartTimerTestTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  test_task_loop(&test_defs[TESTIDX_TIMER]);
+	  test_task_loop(TESTIDX_TIMER);
   }
   /* USER CODE END StartTimerTestTask */
 }
@@ -426,7 +426,7 @@ void StartADCTestTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  test_task_loop(&test_defs[TESTIDX_ADC]);
+	  test_task_loop(TESTIDX_ADC);
   }
   /* USER CODE END StartADCTestTask */
 }
