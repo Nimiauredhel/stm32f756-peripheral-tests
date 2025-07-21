@@ -170,5 +170,6 @@ void test_runner_task_loop(void)
 		else
 		{
 			snprintf(debug_buff, sizeof(debug_buff), "CMSIS error code %ld fetching test request from queue.", queue_ret);
+			serial_debug_enqueue(debug_buff);
 		}	}
 }
