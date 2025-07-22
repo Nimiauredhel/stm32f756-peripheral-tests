@@ -75,15 +75,19 @@ void client_try_pairing(void)
 
     client_fill_pairing_packet();
 
-    printf("Awaiting a server beacon.\n");
+    if (!client_send_pairing_packet())
+    {
+        printf("Failed to send pairing packet.\n");
+        sleep(1);
+        return;
+    }
 
-    client_send_pairing_packet();
+    printf("Awaiting a server beacon.\n");
 
     while (!should_terminate && !is_paired)
     {
-        ssize_t received_bytes = recvfrom(sockfd, client_rx_buffer, sizeof(client_rx_buffer)-1, 0, (struct sockaddr*)&new_server_addr, &new_server_addr_len);
+        ssize_t received_bytes = recvfrom(sockfd, client_rx_buffer, sizeof(client_rx_buffer), 0, (struct sockaddr*)&new_server_addr, &new_server_addr_len);
 
-        printf("Received packet of size %ld.\n", received_bytes);
 
         if (received_bytes <= 0)
         {
@@ -91,11 +95,14 @@ void client_try_pairing(void)
             if (err == ETIMEDOUT || err == EAGAIN || err == EWOULDBLOCK)
             {
                 client_send_pairing_packet();
-                continue;
             }
-            perror("Receiving failed");
+            else perror("Receiving failed");
+            continue;
         }
-        else if(new_server_addr.sin_port == CLIENT_PORT)
+
+        printf("Received packet of size %ld.\n", received_bytes);
+
+        if(new_server_addr.sin_port == CLIENT_PORT)
         {
             // most likely our broadcast
             continue;
@@ -171,7 +178,7 @@ void client_await_response(void)
                     ack_timeout_counter += SOCKET_TIMEOUT_SEC;
                 }
             }
-            perror("Receiving failed");
+            else perror("Receiving failed");
         }
         else if (client_rx_buffer[0] == TEST_PACKET_START_BYTE_VALUE
                 && received_bytes >= TEST_MSG_PACKET_SIZE_BYTES)
@@ -208,6 +215,13 @@ void client_await_response(void)
                 }
                 break;
             case TESTMSG_TEST_START_ACK:
+                if (!request_acknowledged && (received_id_client == stored_id_client))
+                {
+                    request_acknowledged = true;
+                    stored_id_full = received_id_full;
+                    printf("Received updated Test ID: %u (0x%08X).\n", received_id_full, received_id_full);
+                }
+
                 if (stored_id_full != received_id_full)
                 {
                     printf("Received wrong test ID in received 'test start ack' packet.\n");
@@ -218,6 +232,13 @@ void client_await_response(void)
                 }
                 break;
             case TESTMSG_TEST_OVER_RESULTS:
+                if (!request_acknowledged && (received_id_client == stored_id_client))
+                {
+                    request_acknowledged = true;
+                    stored_id_full = received_id_full;
+                    printf("Received updated Test ID: %u (0x%08X).\n", received_id_full, received_id_full);
+                }
+
                 if (stored_id_full != received_id_full)
                 {
                     printf("Wrong test ID in received results packet (expected 0x%08X, received 0x%08X).\n", stored_id_full, received_id_full);
