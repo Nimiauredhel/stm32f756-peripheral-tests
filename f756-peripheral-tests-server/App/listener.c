@@ -15,15 +15,15 @@
 #include "main.h"
 #include "server_common.h"
 
-
 extern struct netif gnetif;
+
 extern osMessageQueueId_t TestQueueHandle;
 extern osMessageQueueId_t OutboxQueueHandle;
 
 static const uint16_t recv_timeout_ms = 1000;
-static const uint16_t recv_idle_debug_ms = 60000;
+static const uint16_t recv_idle_debug_secs = 60;
 
-static uint32_t recv_idle_counter_ms = 0;
+static uint32_t recv_idle_counter_secs = 0;
 
 static struct netconn *listener_conn = NULL;
 static ip4_addr_t listener_address = {0};
@@ -108,12 +108,12 @@ bool process_new_test_request()
  */
 void handle_recv_timeout(void)
 {
-	recv_idle_counter_ms += recv_timeout_ms;
+	recv_idle_counter_secs += recv_timeout_ms/1000;
 
-	if (recv_idle_counter_ms >= recv_idle_debug_ms
-		&& recv_idle_counter_ms % recv_idle_debug_ms == 0)
+	if (recv_idle_counter_secs >= recv_idle_debug_secs
+		&& recv_idle_counter_secs % recv_idle_debug_secs == 0)
 	{
-		snprintf(debug_buff, sizeof(debug_buff), "Listener idle for %lu seconds.", recv_idle_counter_ms/1000);
+		snprintf(debug_buff, sizeof(debug_buff), "Listener idle for %lu minutes.", recv_idle_counter_secs/60);
 		serial_debug_enqueue(debug_buff);
 	}
 }
@@ -256,7 +256,7 @@ void test_listener_task_loop(void)
 		switch(recv_ret)
 		{
 		case ERR_OK:
-			recv_idle_counter_ms = 0;
+			recv_idle_counter_secs = 0;
 			netbuf_data(listener_netbuf, (void **)&listener_pbuf, &listener_pbuf_len);
 
 			if (listener_pbuf[0] == TEST_PACKET_START_BYTE_VALUE)
